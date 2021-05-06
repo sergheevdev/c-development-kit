@@ -3,20 +3,13 @@
 #include <string.h>
 #include "string-builder.h"
 
-struct string_builder {
-    char * built_chain;
-    size_t initial_capacity;
-    size_t used_capacity;
-    size_t max_capacity;
-    size_t resize_increment;
-};
-
-// Implementation
+// Assertion snippet (not abstracted away for piece of code portability)
 
 /**
- * Asserts that the condition is true and if not sends the failure message.
+ * Asserts that the condition is true, otherwise sends a failure message
+ * and stops the execution returning error code 1.
  *
- * @param condition the condition to be met
+ * @param condition the condition that is to be met
  * @param message the error message to be printed if the condition is not met
  */
 void assert(int condition, char message[]) {
@@ -26,10 +19,48 @@ void assert(int condition, char message[]) {
     }
 }
 
-// Default implementation values (to be statistically tested for best default values)
+/*
+ * A constant increment resize string builder.
+ *
+ * A string builder is based on the idea of creating a mutable sequence of
+ * characters, and provide utility operations that can be used to mutate
+ * the string that is being built.
+ *
+ * As we might know, we have a problem in computer science which is that
+ * once we allocate a block of memory, if we want to extend that block to
+ * a bigger size, we need to allocate a new block of that size and copy
+ * all the contents from the old block to the new one.
+ *
+ * This implementation is not very efficient, but it's made for educational
+ * purposes. This implementation's problems are that each time we fill the
+ * string and need more space we'll be making copies every "resize increment",
+ * so if this increment equals to 64, to resize the string we need to copy
+ * 128 characters to the new block, then 192, 256, 320, 384, 448, 512.
+ *
+ * The most obvious problem of this strategy is that it has O(n^2) time
+ * complexity if the string being built is extemely large, for example let's
+ * say the final string is 1 million characters long. Also the amount of
+ * wasted memory is bounded by "resize increment". But for small strings
+ * and when your use case is simple this implementation is ideal.
+ *
+ * @see https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
+ */
+
+// Implementation of the string builder
+
+struct string_builder {
+    char * built_chain;
+    size_t initial_capacity;
+    size_t used_capacity;
+    size_t max_capacity;
+    size_t resize_increment;
+};
+
+// Default implementation values
 static const int DEFAULT_INITIAL_CAPACITY = 128;
 static const int DEFAULT_RESIZE_INCREMENT = 64;
 
+// You can also specify your custom initial capacity and resize increment
 StringBuilder * string_builder_create_default() {
     return string_builder_create(DEFAULT_INITIAL_CAPACITY, DEFAULT_RESIZE_INCREMENT);
 }
