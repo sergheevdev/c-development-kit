@@ -144,6 +144,10 @@ bool string_builder_append(StringBuilder * string_builder, char character) {
 }
 
 bool string_builder_remove(StringBuilder * string_builder, size_t start_index, size_t stop_index) {
+    if(string_builder == NULL) {
+        fprintf(stderr, "Trying to remove characters from a NULL builder at 'string_builder_remove'\n");
+        return false;
+    }
     if(start_index < 0) {
         fprintf(stderr, "Trying to pass an invalid 'start_index' value with "
                         "value less than '1' at 'string_builder_remove'\n");
