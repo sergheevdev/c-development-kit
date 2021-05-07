@@ -74,7 +74,7 @@ void assert(int condition, char message[]) {
  *
  * Please note the word "string" and "char array" are used interchangeably.
  *
- * Supposing that the might end up with a 1 million chars string,
+ * Supposing that the we might end up with a 1 million chars string,
  * we can compute the total amount of wasted memory by using K = resize
  * increment, the applied gauss series will be the following:
  *
