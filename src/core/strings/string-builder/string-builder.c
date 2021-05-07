@@ -22,6 +22,8 @@ void assert(int condition, char message[]) {
 /*
  * A constant increment resize string builder.
  *
+ * ## Explanation:
+ *
  * A string builder is based on the idea of creating a mutable sequence of
  * characters, and provide utility operations that can be used to mutate
  * the string that is being built.
@@ -31,19 +33,54 @@ void assert(int condition, char message[]) {
  * a bigger size, we need to allocate a new block of that size and copy
  * all the contents from the old block to the new one.
  *
- * This implementation is not very efficient, but it's made for educational
- * purposes. This implementation's problems are that each time we fill the
- * string and need more space we'll be making copies every "resize increment",
- * so if this increment equals to 64, to resize the string we need to copy
- * 128 characters to the new block, then 192, 256, 320, 384, 448, 512.
+ * This implementation has some problems, let's suppose that the "resize
+ * increment" is of size 1000. We start with 1000 characters and when we
+ * are short in space we resize the builder to 2000 characters, because
+ * the formula is "new size = old size + resize increment".
  *
- * The most obvious problem of this strategy is that it has O(n^2) time
- * complexity if the string being built is extemely large, for example let's
- * say the final string is 1 million characters long. Also the amount of
- * wasted memory is bounded by "resize increment". But for small strings
- * and when your use case is simple this implementation is ideal.
+ * So each time we run out of space a copy of the string is created, and
+ * the two strings are copied over, character by character. The first
+ * iteration requires us to copy K characters, the second one requires 2K,
+ * the third one 3K, and so on. The total time is O(K + 2K + ... + NK),
+ * This reduces to O(KN^2). But using the gauss sum which is based on
+ * the idea of mathematical series we get that "1 + 2 + ... + N" equals
+ * to "n(n + 1) / 2", which is equal to O(N^2). The important aspect to
+ * notice here is that we are performing an "N x N" multiplication and
+ * that's why O(KN^2) is just O(N^2).
+ *
+ * Just for curiosity supposing that we will end up with a string builder
+ * of 1 million characters of length. We can compute the amount of wasted
+ * memory, because it's bound to the "resize increment" = 1000, like in
+ * the previous example. So "1000 + 2000 + 3000 + ... + 1000000" sums to
+ * on the order of 500 billion characters, we can compute the exact amount
+ * using gauss formula for even number of terms N (a1 + aN) / 2, so the
+ * result will be 1000 * (1000 + 1000000) / 2 = 500500000 wasted chars.
+ * So we may see that the memory waste is also a problem, because when we
+ * get a builder of size 999000 to increase it to 1000000 we need to create
+ * a whole new 1000000 chars allocated block so we might end up having
+ * at a time 2 million characters in memory. So the time complexity might
+ * end up also giving us trouble.
+ *
+ * ## Use cases
+ *
+ * This implementation is really good for educational purposes, but it's
+ * applications are limited unless you know the exact size of the string
+ * so you can prevent the resize or you know the expected groth will be
+ * low. This is because of that n-squared problem.
+ *
+ * ### Advantages
+ *
+ * - Simple implementation (really easy to implement)
+ * - Useful when you know approximately the final string size.
+ *
+ * ### Disadvantages
+ *
+ * - High time complexity and wasted memory.
+ * - Not recommended for huge strings being built.
  *
  * @see https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
+ * @see https://stackoverflow.com/questions/9252891/big-o-what-is-the-complexity-of-summing-a-series-of-n-numbers
+ * @see https://mathbitsnotebook.com/Algebra2/Sequences/SSGauss.html
  */
 
 // Implementation of the string builder
