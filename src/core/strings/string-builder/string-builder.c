@@ -30,56 +30,104 @@ void assert(int condition, char message[]) {
  *
  * As we might know, we have a problem in computer science which is that
  * once we allocate a block of memory, if we want to extend that block to
- * a bigger size, we need to allocate a new block of that size and copy
- * all the contents from the old block to the new one.
+ * a bigger size, we need to allocate a new block of the size and copy
+ * all the contents from the old block to the new one, then finally we
+ * free the old block and use the new one instead.
  *
- * This implementation has some problems, let's suppose that the "resize
- * increment" is of size 1000. We start with 1000 characters and when we
- * are short in space we resize the builder to 2000 characters, because
- * the formula is "new size = old size + resize increment".
+ * Focusing more on implementation details, there is a need to mention that
+ * this implementation has some problems. Let's suppose the following
+ * scenario:
+ * - I = 1000 = initial capacity
+ * - K = 1000 = resize increment
  *
- * So each time we run out of space a copy of the string is created, and
- * the two strings are copied over, character by character. The first
- * iteration requires us to copy K characters, the second one requires 2K,
- * the third one 3K, and so on. The total time is O(K + 2K + ... + NK),
- * This reduces to O(KN^2). But using the gauss sum which is based on
- * the idea of mathematical series we get that "1 + 2 + ... + N" equals
- * to "n(n + 1) / 2", which is equal to O(N^2). The important aspect to
- * notice here is that we are performing an "N x N" multiplication and
- * that's why O(KN^2) is just O(N^2).
+ * Whenever we run out of space we must reallocate the memory, so the
+ * formula is the following: "new size = old size + resize increment".
  *
- * Just for curiosity supposing that we will end up with a string builder
- * of 1 million characters of length. We can compute the amount of wasted
- * memory, because it's bound to the "resize increment" = 1000, like in
- * the previous example. So "1000 + 2000 + 3000 + ... + 1000000" sums to
- * on the order of 500 billion characters, we can compute the exact amount
- * using gauss formula for even number of terms N (a1 + aN) / 2, so the
- * result will be 1000 * (1000 + 1000000) / 2 = 500500000 wasted chars.
- * So we may see that the memory waste is also a problem, because when we
- * get a builder of size 999000 to increase it to 1000000 we need to create
- * a whole new 1000000 chars allocated block so we might end up having
- * at a time 2 million characters in memory. So the time complexity might
- * end up also giving us trouble.
+ * The idea behind the string builder is that we append a sequence of
+ * characters but when we run out of space and append the 1001th char
+ * before doing so me must resize the array from 1000 to 2000 chars,
+ * because of the previous formula: new size = 1000 + 1000 = 2000.
+ *
+ * But each time we reallocate a new string of higher size is created
+ * and all contents are copied from the old string to the new one,
+ * character by character, that's how reallocation works.
+ *
+ * The first reallocation requires us to copy K chars, the second one
+ * required 2K, the third 3K, the fourth 4K, the fifth 5K and so on.
+ * The total time complexity will be O(K + 2K + 3K + ... + NK), this
+ * ends up in a O(N^2) time complexity. How do we know? Because we
+ * use the gauss series formula that tells us that "1 + 2 + ... + N"
+ * is equal to "N * (N + 1) / 2", which turns out to be "O(N^2) by
+ * simplying the big O notation. Note the multiplication because that's
+ * the main point of why we get the N-squared, "N * (N + 1) / 2" can
+ * be simplified to "(N^2 + N) / 2", which is basically "N^2".
+ *
+ * If we are curious and try to build a huge string (i.e. 1 million
+ * chars) we'll dicover that this implementation wastes a lot of
+ * memory and time.
+ *
+ * Supposing that the might end up with a 1 millions chars string,
+ * we can compute the amount of wasted memory using K = resize
+ * increment, the gauss series will be the following:
+ *
+ * "1000 + 2000 + 3000 + ... + 1000000" which sums to on the order
+ * of 500 billion characters of wasted memory.
+ *
+ * We can compute the exact amount by using the gauss formula for
+ * even numbers:
+ *
+ * "N (a1 + aN) / 2" = "1000 * (1000 + 1000000) / 2" = "500500000"
+ * wasted space in characters, the good thing is that now we know
+ * that the amount of wasted space is bounded to the K resize
+ * increment value, which might be useful for some use cases.
+ *
+ * Also note that if we got a builder of size "999000" when we
+ * increase its capacity to "1000000" we need to allocate a whole
+ * new array of "1000000" chars so we might end up having at the
+ * same time approximately 2 million characters in memory for a
+ * short period of time (until reallocation is completed).
+ *
+ * ## Summary
+ *
+ * Basic implementation strategy:
+ * - Create an initial array of characters (initial length of I chars).
+ * - When you run out of space and need to add more chars, reallocate to
+ *   a new array with K more chars (K = constant = resize increment).
+ * - The reallocation copies all the old array contents to the new block
+ *   and frees the old block.
  *
  * ## Use cases
  *
  * This implementation is really good for educational purposes, but it's
- * applications are limited unless you know the exact size of the string
- * so you can prevent the resize or you know the expected groth will be
- * low. This is because of that n-squared problem.
+ * applications are limited, unless you know the exact size of the string
+ * or the expected growth so you can prevent the reallocation complexity
+ * overhead (n-squared problem).
  *
  * ### Advantages
  *
  * - Simple implementation (really easy to implement)
- * - Useful when you know approximately the final string size.
+ * - Useful when you know approximately the expected final size or growth.
  *
  * ### Disadvantages
  *
  * - High time complexity and wasted memory.
  * - Not recommended for huge strings being built.
  *
+ * ### Better implementation ideas
+ *
+ * - Usage of a double when full strategy instead of defining a constant
+ *   resize increment.
+ * - Usage of a growth factor instead of a constant resize increment, the
+ *   factor value is often a bit smaller than the golden mean (~1.6), most
+ *   implementations use the 1.5 value.
+ * - Using a linked list of blocks (this implementation only prevents the
+ *   amortized complexity of reallocation, but in the end you might need to
+ *   turn the whole thing into a string which can be really expensive because
+ *   of the poor locality).
+ *
  * @see https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
  * @see https://stackoverflow.com/questions/9252891/big-o-what-is-the-complexity-of-summing-a-series-of-n-numbers
+ * @see https://math.stackexchange.com/questions/2844825/time-complexity-from-an-arithmetic-series/2844851#2844851
  * @see https://mathbitsnotebook.com/Algebra2/Sequences/SSGauss.html
  */
 
