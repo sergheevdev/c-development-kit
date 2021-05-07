@@ -22,53 +22,61 @@ void assert(int condition, char message[]) {
 /*
  * A constant increment resize string builder.
  *
- * ## Explanation:
+ * ### Explanation:
  *
  * A string builder is based on the idea of creating a mutable sequence of
- * characters, and provide utility operations that can be used to mutate
+ * characters, and providing utility operations that can be used to mutate
  * the string that is being built.
+ *
+ * This structure is used as an auxiliary structure on several string
+ * manipulation algorithms (i.e. replace all ocurrences of a string to
+ * another).
  *
  * As we might know, we have a problem in computer science which is that
  * once we allocate a block of memory, if we want to extend that block to
- * a bigger size, we need to allocate a new block of the size and copy
+ * a bigger size, we need to allocate a new block of the new size and copy
  * all the contents from the old block to the new one, then finally we
  * free the old block and use the new one instead.
  *
- * Focusing more on implementation details, there is a need to mention that
- * this implementation has some problems. Let's suppose the following
+ * Focusing more on the implementation details, there is a need to mention
+ * that this implementation has some problems. Let's suppose the following
  * scenario:
+ *
  * - I = 1000 = initial capacity
  * - K = 1000 = resize increment
  *
- * Whenever we run out of space we must reallocate the memory, so the
- * formula is the following: "new size = old size + resize increment".
+ * Whenever we run out of space we must reallocate the array for more memory,
+ * so the formula is the following: "new size = old size + resize increment".
  *
- * The idea behind the string builder is that we append a sequence of
- * characters but when we run out of space and append the 1001th char
- * before doing so me must resize the array from 1000 to 2000 chars,
+ * The idea behind the string builder is that we can append sequences of
+ * characters, but when we run out of space and append the 1001th char
+ * before doing so, we must ensure that the array has capacity for another
+ * character to be added, if not we resize the array from 1000 to 2000 chars,
  * because of the previous formula: new size = 1000 + 1000 = 2000.
  *
- * But each time we reallocate a new string of higher size is created
- * and all contents are copied from the old string to the new one,
- * character by character, that's how reallocation works.
+ * But each time we reallocate a new string of higher size, a new array is
+ * created and all contents are copied from the old char array to the new
+ * one, character by character, that's how reallocation works.
  *
  * The first reallocation requires us to copy K chars, the second one
  * required 2K, the third 3K, the fourth 4K, the fifth 5K and so on.
  * The total time complexity will be O(K + 2K + 3K + ... + NK), this
- * ends up in a O(N^2) time complexity. How do we know? Because we
+ * ends up in an O(N^2) time complexity. How do we know that? Because we
  * use the gauss series formula that tells us that "1 + 2 + ... + N"
- * is equal to "N * (N + 1) / 2", which turns out to be "O(N^2) by
- * simplying the big O notation. Note the multiplication because that's
- * the main point of why we get the N-squared, "N * (N + 1) / 2" can
- * be simplified to "(N^2 + N) / 2", which is basically "N^2".
+ * is equal to "N * (N + 1) / 2", which turns out to be "O(N^2)" by
+ * simplying the big O notation. Note the multiplication, because
+ * that's the main reason why we get the N-squared time, "N * (N + 1) / 2"
+ * which can be simplified to "(N^2 + N) / 2", which is basically "N^2".
  *
  * If we are curious and try to build a huge string (i.e. 1 million
- * chars) we'll dicover that this implementation wastes a lot of
- * memory and time.
+ * chars long string) we'll dicover that this implementation wastes a
+ * lot of time and space (memory).
  *
- * Supposing that the might end up with a 1 millions chars string,
- * we can compute the amount of wasted memory using K = resize
- * increment, the gauss series will be the following:
+ * Please note the word "string" and "char array" are used interchangeably.
+ *
+ * Supposing that the might end up with a 1 million chars string,
+ * we can compute the total amount of wasted memory by using K = resize
+ * increment, the applied gauss series will be the following:
  *
  * "1000 + 2000 + 3000 + ... + 1000000" which sums to on the order
  * of 500 billion characters of wasted memory.
@@ -77,53 +85,57 @@ void assert(int condition, char message[]) {
  * even numbers:
  *
  * "N (a1 + aN) / 2" = "1000 * (1000 + 1000000) / 2" = "500500000"
- * wasted space in characters, the good thing is that now we know
- * that the amount of wasted space is bounded to the K resize
- * increment value, which might be useful for some use cases.
+ * characters of wasted space, the good thing is that now we know
+ * that the amount of wasted space is bounded to the K (resize
+ * increment) value, which might be useful for some use cases.
  *
  * Also note that if we got a builder of size "999000" when we
  * increase its capacity to "1000000" we need to allocate a whole
- * new array of "1000000" chars so we might end up having at the
+ * new array of "1000000" chars, so we might end up having at the
  * same time approximately 2 million characters in memory for a
  * short period of time (until reallocation is completed).
  *
- * ## Summary
+ * ### Summary
  *
  * Basic implementation strategy:
  * - Create an initial array of characters (initial length of I chars).
- * - When you run out of space and need to add more chars, reallocate to
+ * - When you run out of space and need to add more chars, reallocate
  *   a new array with K more chars (K = constant = resize increment).
- * - The reallocation copies all the old array contents to the new block
- *   and frees the old block.
+ * - The reallocation copies all the old array contents to the new
+ *   array and finally frees the old array memory.
  *
- * ## Use cases
+ * ### Use cases
  *
- * This implementation is really good for educational purposes, but it's
- * applications are limited, unless you know the exact size of the string
- * or the expected growth so you can prevent the reallocation complexity
- * overhead (n-squared problem).
+ * This implementation is really good for educational purposes, but
+ * its applications are limited, unless you know the exact size of
+ * the string or the expected growth, if so, you can prevent the
+ * reallocation complexity overhead (n-squared problem), and then this
+ * implementation is perfectly reasonable.
  *
  * ### Advantages
  *
  * - Simple implementation (really easy to implement)
- * - Useful when you know approximately the expected final size or growth.
+ * - Useful when you know approximately the expected final size or
+ *   growth of the final string length.
  *
  * ### Disadvantages
  *
- * - High time complexity and wasted memory.
- * - Not recommended for huge strings being built.
+ * - High time complexity and wasted memory (not the same as time complexity).
+ * - Not recommended for huge strings being built because complexity get to
+ *   be O(N^2) time.
  *
  * ### Better implementation ideas
  *
- * - Usage of a double when full strategy instead of defining a constant
+ * - Usage of a "double when full" strategy instead of defining a constant
  *   resize increment.
- * - Usage of a growth factor instead of a constant resize increment, the
- *   factor value is often a bit smaller than the golden mean (~1.6), most
- *   implementations use the 1.5 value.
- * - Using a linked list of blocks (this implementation only prevents the
- *   amortized complexity of reallocation, but in the end you might need to
- *   turn the whole thing into a string which can be really expensive because
- *   of the poor locality).
+ * - Usage of a growth factor instead of a constant resize increment,
+ *   this value is often similar to the golden mean (~1.6) but a little bit,
+ *   smaller, most implementations use the 1.5 value.
+ * - Using a "linked list of blocks" (this implementation only prevents the
+ *   amortized complexity of reallocation, but in the end you always need
+ *   to turn the whole thing into a string which can be really expensive
+ *   because of the poor locality) but with the previous implementations you
+ *   can just get the pointer and that's it.
  *
  * @see https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
  * @see https://stackoverflow.com/questions/9252891/big-o-what-is-the-complexity-of-summing-a-series-of-n-numbers
