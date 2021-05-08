@@ -323,12 +323,12 @@ char * string_builder_result_as_copy(StringBuilder * string_builder) {
 
 void string_builder_create_default_test() {
     StringBuilder * string_builder = string_builder_create_default();
-    assert(string_builder != NULL, "Expected 'string_builder' not to be NULL");
-    assert(string_builder->built_chain != NULL, "Expected 'built_chain' not to be NULL");
-    assert(string_builder->initial_capacity == DEFAULT_INITIAL_CAPACITY, "Expected builder's 'initial_capacity' to be equal to 'DEFAULT_INITIAL_CAPACITY'");
-    assert(string_builder->used_capacity == 0, "Expected builder's 'used_capacity' to be equal to '0'");
-    assert(string_builder->max_capacity == DEFAULT_INITIAL_CAPACITY, "Expected builder's 'max_capacity' to be equal to 'DEFAULT_INITIAL_CAPACITY'");
-    assert(string_builder->resize_increment == DEFAULT_RESIZE_INCREMENT, "Expected builder's 'resize_increment' to be equal to 'DEFAULT_RESIZE_INCREMENT'");
+    assert(string_builder != NULL, "Expected 'string_builder' not to be NULL at 'string_builder_create_default_test'");
+    assert(string_builder->built_chain != NULL, "Expected builder's 'built_chain' not to be NULL at 'string_builder_create_default_test'");
+    assert(string_builder->initial_capacity == DEFAULT_INITIAL_CAPACITY, "Expected builder's 'initial_capacity' to be equal to 'DEFAULT_INITIAL_CAPACITY' at 'string_builder_create_default_test'");
+    assert(string_builder->used_capacity == 0, "Expected builder's 'used_capacity' to be equal to '0' at 'string_builder_create_default_test'");
+    assert(string_builder->max_capacity == DEFAULT_INITIAL_CAPACITY, "Expected builder's 'max_capacity' to be equal to 'DEFAULT_INITIAL_CAPACITY' at 'string_builder_create_default_test'");
+    assert(string_builder->resize_increment == DEFAULT_RESIZE_INCREMENT, "Expected builder's 'resize_increment' to be equal to 'DEFAULT_RESIZE_INCREMENT' at 'string_builder_create_default_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_create_default_test' passed successfully!\n");
 }
@@ -337,57 +337,50 @@ void string_builder_create_with_custom_values_test() {
     size_t initial_capacity = 16;
     size_t resize_increment = 32;
     StringBuilder * string_builder = string_builder_create(initial_capacity, resize_increment);
-    assert(string_builder != NULL, "Expected 'string_builder' not to be NULL");
-    assert(string_builder->built_chain != NULL, "Expected 'built_chain' not to be NULL");
-    assert(string_builder->initial_capacity == initial_capacity, "Expected builder's 'initial_capacity' to be equal to 'initial_capacity'");
-    assert(string_builder->used_capacity == 0, "Expected builder's 'used_capacity' to be equal to '0'");
-    assert(string_builder->max_capacity == initial_capacity, "Expected builder's 'max_capacity' to be equal to 'initial_capacity'");
-    assert(string_builder->resize_increment == resize_increment, "Expected builder's 'resize_increment' to be equal to 'resize_increment'");
+    assert(string_builder != NULL, "Expected 'string_builder' not to be NULL at 'string_builder_create_with_custom_values_test'");
+    assert(string_builder->built_chain != NULL, "Expected builder's 'built_chain' not to be NULL at 'string_builder_create_with_custom_values_test'");
+    assert(string_builder->initial_capacity == initial_capacity, "Expected builder's 'initial_capacity' to be equal to 'initial_capacity' at 'string_builder_create_with_custom_values_test'");
+    assert(string_builder->used_capacity == 0, "Expected builder's 'used_capacity' to be equal to '0' at 'string_builder_create_with_custom_values_test'");
+    assert(string_builder->max_capacity == initial_capacity, "Expected builder's 'max_capacity' to be equal to 'initial_capacity' at 'string_builder_create_with_custom_values_test'");
+    assert(string_builder->resize_increment == resize_increment, "Expected builder's 'resize_increment' to be equal to 'resize_increment' at 'string_builder_create_with_custom_values_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_create_with_custom_values_test' passed successfully!\n");
 }
 
-void string_builder_create_with_zero_resize_increment_should_fail_test() {
+void string_builder_create_with_zero_resize_increment_test() {
     size_t initial_capacity = 16;
     size_t resize_increment = 0;
     StringBuilder * string_builder = string_builder_create(initial_capacity, resize_increment);
-    assert(string_builder == NULL, "Expected 'string_builder' to be NULL");
-    printf("The test 'string_builder_create_with_zero_resize_increment_should_fail_test' passed successfully!\n");
-}
-
-void string_builder_create_using_invalid_resize_increment_test() {
-    StringBuilder * string_builder = string_builder_create(10, 0);
-    assert(string_builder == NULL, "Expected the builder to be NULL");
-    string_builder_destroy(string_builder);
-    printf("The test 'string_builder_create_using_invalid_resize_increment_test' passed successfully!\n");
+    assert(string_builder == NULL, "Expected 'string_builder' to be NULL at 'string_builder_create_with_zero_resize_increment_test'");
+    printf("The test 'string_builder_create_with_zero_resize_increment_test' passed successfully!\n");
 }
 
 void string_builder_remove_test() {
     StringBuilder * string_builder = string_builder_create(1, 5);
-    // Append the example text character by character to the builder
-    char text[] = "Hello world, I am a fancy string builder";
-    char * traverser;
-    for(traverser = text; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    // Append the example sampleText character by character to the builder
+    char sampleText[] = "Hello world, I am a fancy string builder";
+    char * charTraverser;
+    for(charTraverser = sampleText; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // Remove the "Hello world, " part
     string_builder_remove(string_builder, 0, 12);
     // The internal result must be equal to "I am a fancy string builder"
     char * internal_result = string_builder_result(string_builder);
-    assert(strcmp(internal_result, "I am a fancy string builder") == 0, "Expected builder's 'internal_result' to be equal to 'I am a fancy string builder'");
+    assert(strcmp(internal_result, "I am a fancy string builder") == 0, "Expected builder's 'internal_result' to be equal to 'I am a fancy string builder' at 'string_builder_remove_test'");
     // The length of the result string "I am a fancy string builder" must be equal to 27
-    assert(string_builder->used_capacity == 27, "Expected used capacity to be equal to '27'");
+    assert(string_builder->used_capacity == 27, "Expected builder's 'used_capacity' to be equal to '27' at 'string_builder_remove_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_remove_test' passed successfully!\n");
 }
 
-void string_builder_multiple_removals_test() {
+void string_builder_remove_multiple_times_test() {
     StringBuilder * string_builder = string_builder_create(4, 8);
-    // Append the example text character by character to the builder
-    char text[] = "Hello world, I am a fancy string builder";
-    char * traverser;
-    for(traverser = text; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    // Append the example sampleText character by character to the builder
+    char sampleText[] = "Hello world, I am a fancy string builder";
+    char * charTraverser;
+    for(charTraverser = sampleText; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // Remove "Hello world, " and "I am a fancy string builder" is left
     string_builder_remove(string_builder, 0, 12);
@@ -397,11 +390,11 @@ void string_builder_multiple_removals_test() {
     string_builder_remove(string_builder, 10, 24);
     // The internal result must be equal to "I am fancy"
     char * internal_result = string_builder_result(string_builder);
-    assert(strcmp(internal_result, "I am fancy") == 0, "Expected builder's 'internal_result' to be equal to 'I am fancy'");
+    assert(strcmp(internal_result, "I am fancy") == 0, "Expected builder's 'internal_result' to be equal to 'I am fancy' at 'string_builder_remove_multiple_times_test'");
     // The length of the result string "I am fancy" must be equal to 10
-    assert(string_builder->used_capacity == 10, "Expected used capacity to be equal to '10'");
+    assert(string_builder->used_capacity == 10, "Expected builder's 'used_capacity' to be equal to '10' at 'string_builder_remove_multiple_times_test'");
     string_builder_destroy(string_builder);
-    printf("The test 'string_builder_multiple_removals_test' passed successfully!\n");
+    printf("The test 'string_builder_remove_multiple_times_test' passed successfully!\n");
 }
 
 void string_builder_ensure_capacity_test() {
@@ -409,8 +402,8 @@ void string_builder_ensure_capacity_test() {
     for(int i = 0; i < 15; i++) {
         string_builder_append(string_builder, 'A');
     }
-    assert(string_builder->used_capacity == 15, "Expected used capacity to be equal to '15'");
-    assert(string_builder->max_capacity == 25, "Expected max capacity to be equal to '25'");
+    assert(string_builder->used_capacity == 15, "Expected builder's 'used_capacity' to be equal to '15' at 'string_builder_ensure_capacity_test'");
+    assert(string_builder->max_capacity == 25, "Expected builder's 'max_capacity' to be equal to '25' at 'string_builder_ensure_capacity_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_ensure_capacity_test' passed successfully!\n");
 }
@@ -419,51 +412,51 @@ void string_builder_append_test() {
     StringBuilder * string_builder = string_builder_create(2, 5);
     // Append the example name character by character to the builder
     char name[] = "John";
-    char * traverser;
-    for(traverser = name; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    char * charTraverser;
+    for(charTraverser = name; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // Append a space separator
     string_builder_append(string_builder, ' ');
     // Append the example surname character by character to the builder
     char surname[] = "Smith";
-    for(traverser = surname; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    for(charTraverser = surname; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // The internal result must be equal to "John Smith"
     char * internal_result = string_builder_result(string_builder);
-    assert(strcmp(internal_result, "John Smith") == 0, "Expected builder's 'internal_result' to be equal to 'John Smith'");
+    assert(strcmp(internal_result, "John Smith") == 0, "Expected builder's 'internal_result' to be equal to 'John Smith' at 'string_builder_append_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_append_test' passed successfully!\n");
 }
 
 void string_builder_result_test() {
     StringBuilder * string_builder = string_builder_create_default();
-    // Append the example text character by character to the builder
-    char text[] = "Spiderman";
-    char * traverser;
-    for(traverser = text; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    // Append the example sampleText character by character to the builder
+    char sampleText[] = "Spiderman";
+    char * charTraverser;
+    for(charTraverser = sampleText; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // The internal result must be equal to "Spiderman"
     char * internal_result = string_builder_result(string_builder);
-    assert(strcmp(internal_result, "Spiderman") == 0, "Expected builder's 'internal_result' to be equal to 'Spiderman'");
+    assert(strcmp(internal_result, "Spiderman") == 0, "Expected builder's 'internal_result' to be equal to 'Spiderman' at 'string_builder_result_test'");
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_result_test' passed successfully!\n");
 }
 
 void string_builder_result_as_copy_test() {
     StringBuilder * string_builder = string_builder_create_default();
-    // Append the example text character by character to the builder
-    char text[] = "Extra-Ordinary Men";
-    char * traverser;
-    for(traverser = text; * traverser != '\0'; traverser++) {
-        string_builder_append(string_builder, (*traverser));
+    // Append the example sampleText character by character to the builder
+    char sampleText[] = "Extra-Ordinary Men";
+    char * charTraverser;
+    for(charTraverser = sampleText; * charTraverser != '\0'; charTraverser++) {
+        string_builder_append(string_builder, (*charTraverser));
     }
     // The internal result must be equal to "Extra-Ordinary Men"
     char * result_as_copy = string_builder_result_as_copy(string_builder);
-    assert(result_as_copy != NULL, "Expected 'result_as_copy' not to be NULL");
-    assert(strcmp(result_as_copy, "Extra-Ordinary Men") == 0, "Expected builder's 'result_as_copy' to be equal to 'Extra-Ordinary Men'");
+    assert(result_as_copy != NULL, "Expected 'result_as_copy' not to be NULL at 'string_builder_result_as_copy_test'");
+    assert(strcmp(result_as_copy, "Extra-Ordinary Men") == 0, "Expected 'result_as_copy' to be equal to 'Extra-Ordinary Men' at 'string_builder_result_as_copy_test'");
     free(result_as_copy);
     string_builder_destroy(string_builder);
     printf("The test 'string_builder_result_as_copy_test' passed successfully!\n");
@@ -475,12 +468,11 @@ int main() {
     fclose(stderr);
     string_builder_create_default_test();
     string_builder_create_with_custom_values_test();
-    string_builder_create_with_zero_resize_increment_should_fail_test();
-    string_builder_create_using_invalid_resize_increment_test();
+    string_builder_create_with_zero_resize_increment_test();
     string_builder_ensure_capacity_test();
     string_builder_append_test();
     string_builder_remove_test();
-    string_builder_multiple_removals_test();
+    string_builder_remove_multiple_times_test();
     string_builder_result_test();
     string_builder_result_as_copy_test();
 }
