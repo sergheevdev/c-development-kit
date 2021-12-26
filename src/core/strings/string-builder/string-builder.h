@@ -21,11 +21,10 @@ StringBuilder * string_builder_create_default();
  * The returned builder must be freed by the client after its usage.
  *
  * @param initial_capacity initial amount of dynamically allocated characters
- * @param resize_increment the increment of characters on resize
  *
  * @return a new string builder
  */
-StringBuilder * string_builder_create(size_t initial_capacity, size_t resize_increment);
+StringBuilder * string_builder_create(size_t initial_capacity);
 
 /**
  * Frees the string builder structure and all its dynamically allocated contents.
