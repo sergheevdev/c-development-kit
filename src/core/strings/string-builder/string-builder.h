@@ -34,6 +34,17 @@ StringBuilder * string_builder_create(size_t initial_capacity);
 void string_builder_destroy(StringBuilder * string_builder);
 
 /**
+ * Frees the string builder structure but does not free the internal built chain.
+ *
+ * @param string_builder the string builder that is about to be freed
+ *
+ * @note instead of obtaining the result as copy we can directly access the chain pointer,
+ *       and then freeing only the structure, that way we don't need extra "re-allocations"
+ *       to obtain the result (i.e., the built chain)
+ */
+void string_builder_destroy_except_chain(StringBuilder * string_builder);
+
+/**
  * Appends a character to the given string builder.
  *
  * @param string_builder the string builder to whom the character must be appended to
@@ -42,6 +53,18 @@ void string_builder_destroy(StringBuilder * string_builder);
  * @return true if the append operation completed successfully, false otherwise
  */
 bool string_builder_append(StringBuilder * string_builder, char character);
+
+/**
+ * Appends an array of characters to the given string builder.
+ *
+ * @param string_builder the string builder to whom the array of characters must be appended to
+ * @param character the array of characters to be appended
+ *
+ * @note if the append operation fails, the string builder is rolled back to its old contents.
+ *
+ * @return true if the append operation completed successfully, false otherwise
+ */
+bool string_builder_append_all(StringBuilder * string_builder, char * chain);
 
 /**
  * Removes the characters between the start and stop indexes (inclusive both) from the given builder.
