@@ -11,48 +11,48 @@ typedef struct string_builder StringBuilder;
  *
  * The returned builder must be freed by the client after its usage.
  *
- * @return a new string builder
+ * @return a new string builder, or {@code NULL} if an allocation error occurred
  */
 StringBuilder * string_builder_create_default();
 
 /**
- * Creates a string builder with a concrete initial capacity and resize increment.
+ * Creates a string builder with the provided initial capacity.
  *
  * The returned builder must be freed by the client after its usage.
  *
- * @param initial_capacity initial amount of dynamically allocated characters
+ * @param initial_capacity the initial amount of dynamically allocated characters
  *
- * @return a new string builder
+ * @return a new string builder, or {@code NULL} if an allocation error occurred
  */
 StringBuilder * string_builder_create(size_t initial_capacity);
 
 /**
- * Frees the string builder structure and all its dynamically allocated contents.
+ * Frees the string builder structure and the dynamically allocated chain.
  *
  * @param string_builder the string builder that is about to be freed
  */
 void string_builder_destroy(StringBuilder * string_builder);
 
 /**
- * Frees the string builder structure but does not free the internal built chain.
+ * Frees the string builder structure but does NOT free the pointer to the built-in chain.
  *
  * @param string_builder the string builder that is about to be freed
  *
- * @note instead of obtaining the result as copy we can directly access the chain pointer,
- *       and then freeing only the structure, that way we don't need extra "re-allocations"
- *       to obtain the result (i.e., the built chain)
+ * @note useful when you don't want to have two copies of the same string in memory at the same time
  */
 void string_builder_destroy_except_chain(StringBuilder * string_builder);
 
 /**
- * Appends a character to the given string builder.
+ * Appends one character to the given string builder.
  *
  * @param string_builder the string builder to whom the character must be appended to
  * @param character the character to be appended
  *
- * @return true if the append operation completed successfully, false otherwise
+ * @note the append operation can only fail if there was a reallocation error
+ *
+ * @return {@code true} if the append operation was successful, {@code false} otherwise
  */
-bool string_builder_append(StringBuilder * string_builder, char character);
+bool string_builder_append_one(StringBuilder * string_builder, char character);
 
 /**
  * Appends an array of characters to the given string builder.
@@ -60,42 +60,42 @@ bool string_builder_append(StringBuilder * string_builder, char character);
  * @param string_builder the string builder to whom the array of characters must be appended to
  * @param character the array of characters to be appended
  *
- * @note if the append operation fails, the string builder is rolled back to its old contents.
+ * @note the append operation can only fail if there was a reallocation error
  *
- * @return true if the append operation completed successfully, false otherwise
+ * @return {@code true} if the append operation was successful, {@code false} otherwise
  */
 bool string_builder_append_all(StringBuilder * string_builder, char * chain);
 
 /**
- * Removes the characters between the start and stop indexes (inclusive both) from the given builder.
+ * Removes all the characters between the start index (inclusive) and stop index (inclusive) from the given builder.
  *
- * @param string_builder the string builder from whom the chain in between the start and stop indexes is to be removed
- * @param start_index the start inclusive index from where to start removing
- * @param stop_index the stop inclusive index that indicates the last position to be removed
+ * @param string_builder the string builder from whom the chain in the given range is to be removed
+ * @param start_index the start inclusive index
+ * @param stop_index the stop inclusive index
  *
- * @return true if the remove operation completed successfully, false otherwise
+ * @return {@code true} if the remove operation was successful, {@code false} otherwise
  */
 bool string_builder_remove(StringBuilder * string_builder, size_t start_index, size_t stop_index);
 
 /**
- * Returns the builder's internal pointer to the constructed string.
+ * Returns a pointer to the original built chain (which the builder uses internally).
  *
- * This string is freed when you free the builder structure (use with caution).
+ * This pointer is freed (and therefore deallocated) when you use the default destroy method (use with caution).
  *
- * @param string_builder the string builder from whom the built chain is extracted
+ * @param string_builder the string builder from whom the built chain pointer is to be returned
  *
- * @return the built chain by the given string builder
+ * @return a pointer to the original builder built in chain, or {@code NULL} if an allocation error occurred
  */
 char * string_builder_result(StringBuilder * string_builder);
 
 /**
- * Returns a copy of the constructed string.
+ * Returns a copy of the given builder's constructed string.
  *
- * The returned string must be freed by the client after its usage.
+ * The returned chain must be freed by the client after its usage.
  *
- * @param string_builder the string builder from whom the built chain copy is extracted
+ * @param string_builder the string builder from whom a built chain copy is to be created
  *
- * @return a copy of the string builder's built chain
+ * @return a copy of the constructed string, or {@code NULL} if an allocation error occurred
  */
 char * string_builder_result_as_copy(StringBuilder * string_builder);
 

@@ -4,7 +4,7 @@
 #include "string-builder.h"
 
 /*
- * String Builder (with golden ratio as resize strategy).
+ * A Non Thread-Safe String Builder Implementation (with golden ratio as resize strategy).
  *
  * ### Explanation ###
  *
@@ -91,9 +91,11 @@
  * @see https://news.ycombinator.com/item?id=8555550
  */
 
-// Headers
+// Declaration of internal methods (to be able to order them in top-bottom style)
 
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount);
+void string_builder_write_unsafe(StringBuilder * string_builder, char character);
+size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount);
 
 // Implementation of the string builder
 
@@ -132,24 +134,24 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
     return string_builder;
 }
 
-bool string_builder_append(StringBuilder * string_builder, char character) {
+bool string_builder_append_one(StringBuilder * string_builder, char character) {
     if (string_builder == NULL) {
         fprintf(stderr, "Trying to append a character to a 'NULL' builder at '%s'\n", __func__);
         return false;
     }
     // Ensure that the builder capacity allows one more character to be appended, otherwise resize the chain
     bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, 1);
-    // If ensuring the capacity wasn't possible, then the append operation failed
+    // If ensuring the capacity wasn't possible, then the "append" operation failed
     if (!is_capacity_ensured) return false;
-    // Get the last unused character position, which is where the new character is to be appended
-    char * last_unused = string_builder->built_chain + string_builder->used_capacity;
-    // Assign the character value
-    (* last_unused) = character;
-    // Increase the amount of used characters
-    string_builder->used_capacity++;
+    // We can use the "write unsafe" operation because we've ensured the capacity and the builder non-nullability
+    string_builder_write_unsafe(string_builder, character);
+    // Return a successful append result
     return true;
 }
 
+/**
+ * @note that we pre-compute the necessary slots and then we reallocate only ONCE, instead of performing M reallocations
+ */
 bool string_builder_append_all(StringBuilder * string_builder, char * chain) {
     if (string_builder == NULL) {
         fprintf(stderr, "Trying to append a character to a 'NULL' builder at '%s'\n", __func__);
@@ -159,23 +161,29 @@ bool string_builder_append_all(StringBuilder * string_builder, char * chain) {
         fprintf(stderr, "Trying to append a 'NULL' chain to a builder at '%s'\n", __func__);
         return false;
     }
-    // Keep track of the appended chars amount (to be able to "rollback" to the old builder)
-    size_t appended_amount = 0;
+    // Ensure that the builder capacity allows for N more characters to be appended, otherwise resize the chain
+    bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, strlen(chain));
+    // If ensuring the capacity wasn't possible, then the "append all" operation failed
+    if (!is_capacity_ensured) return false;
     // Append all the chars
     for (char * current = chain; * current != '\0'; current++) {
-        // Attempt to append the current char
-        bool success = string_builder_append(string_builder, (* current));
-        // If appending the current char was not successful
-        if (!success) {
-            // Attempt to restore the old builder contents by removing the previously appended chars
-            if (appended_amount != 0) {
-                string_builder_remove(string_builder, string_builder->used_capacity - appended_amount, string_builder->used_capacity - 1);
-            }
-            return false;
-        }
-        appended_amount++;
+        // We can use the "write unsafe" operation because we've ensured the capacity and the builder non-nullability
+        string_builder_write_unsafe(string_builder, (*current));
     }
+    // Return a successful append all result
     return true;
+}
+
+/**
+ * @note the PRECONDITIONS to use this method are: to have a free slot to append one char and the builder non-nullability
+ */
+void string_builder_write_unsafe(StringBuilder * string_builder, char character) {
+    // Get the last unused character position, which is where the new character is to be appended
+    char * last_unused = string_builder->built_chain + string_builder->used_capacity;
+    // Assign the character value
+    (* last_unused) = character;
+    // Increase the amount of used characters
+    string_builder->used_capacity++;
 }
 
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount) {
@@ -187,19 +195,13 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
         fprintf(stderr, "The 'chars_amount' must be an integer bigger or equal to '1' at '%s'\n", __func__);
         return false;
     }
-    // If there is enough capacity for the requested characters, then there's no need to perform a "reallocation"
+    // If there is enough capacity for the requested characters, then there's no need to perform a reallocation
     if (string_builder->max_capacity - 1 >= string_builder->used_capacity + chars_amount) {
         return true;
     }
-    // Declare the new size
-    size_t new_size = string_builder->max_capacity;
-    // Always ensure one extra spot for the string 'NULL' terminator
-    // Pre-compute the required size before performing a "reallocation" to prevent "overhead"
-    while (new_size - 1 < string_builder->used_capacity + chars_amount) {
-        // Same as "new_size = old_size * 1.5" or "new_size = (old_size * 3) / 2", where "1.5" is approximately ~ the golden ratio
-        // See that we add an extra "+1" to prevent getting stuck at size = "1" (because the bit operation truncates decimals)
-        new_size = ((new_size + (new_size << 1)) >> 1) + 1;
-    }
+    // Otherwise, we pre-compute the new size for our chain according to our chosen strategy
+    size_t new_size = string_builder_compute_new_size(string_builder, chars_amount);
+    // Resize the chain using the previously pre-computed new size
     char * resized_chain = realloc(string_builder->built_chain, sizeof(char) * new_size);
     if (resized_chain == NULL) {
         fprintf(stderr, "Unable to reallocate memory for 'resized_chain' at '%s'\n", __func__);
@@ -209,6 +211,20 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
     string_builder->built_chain = resized_chain;
     string_builder->max_capacity = new_size;
     return true;
+}
+
+size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount) {
+    // Declare the new size
+    size_t new_size = string_builder->max_capacity;
+    // Always ensure one extra spot for the string 'NULL' terminator
+    // Pre-compute the required size before performing a "reallocation" to prevent "overhead"
+    while (new_size - 1 < string_builder->used_capacity + chars_amount) {
+        // Same as "new_size = old_size * 1.5" or "new_size = (old_size * 3) / 2", where "1.5" is approximately ~ the golden ratio
+        // See that we add an extra "+1" to prevent getting stuck at size = "1" (because the bit operation truncates decimals)
+        new_size = ((new_size + (new_size << 1)) >> 1) + 1;
+    }
+    // Return the new size
+    return new_size;
 }
 
 bool string_builder_remove(StringBuilder * string_builder, size_t start_index, size_t stop_index) {
@@ -252,7 +268,7 @@ bool string_builder_remove(StringBuilder * string_builder, size_t start_index, s
 
 char * string_builder_result(StringBuilder * string_builder) {
     if (string_builder == NULL) {
-        fprintf(stderr, "Trying to get the result of a 'NULL' builder at 'string_builder_result'\n");
+        fprintf(stderr, "Trying to get the result of a 'NULL' builder at '%s'\n", __func__);
         return false;
     }
     // If the chain has extra (garbage/unused characters), then resize the buffer to match the exact required size
@@ -262,7 +278,7 @@ char * string_builder_result(StringBuilder * string_builder) {
         // Attempt to resize to the used capacity
         char * resized_chain = realloc(string_builder->built_chain, sizeof(char) * new_size);
         if (resized_chain == NULL) {
-            fprintf(stderr, "Unable to reallocate memory for 'resized_chain' at 'string_builder_result'\n");
+            fprintf(stderr, "Unable to reallocate memory for 'resized_chain' at '%s'\n", __func__);
             return NULL;
         }
         string_builder->built_chain = resized_chain;
@@ -276,12 +292,12 @@ char * string_builder_result(StringBuilder * string_builder) {
 
 char * string_builder_result_as_copy(StringBuilder * string_builder) {
     if (string_builder == NULL) {
-        fprintf(stderr, "Trying to get a copy of the result of a 'NULL' builder at 'string_builder_result_as_copy'\n");
+        fprintf(stderr, "Trying to get a copy of the result of a 'NULL' builder at '%s'\n", __func__);
         return false;
     }
     char * copied_chain = malloc(sizeof(char) * (string_builder->used_capacity + 1));
     if (copied_chain == NULL) {
-        fprintf(stderr, "Unable to allocate memory for 'copied_chain' at 'string_builder_result_as_copy'\n");
+        fprintf(stderr, "Unable to allocate memory for 'copied_chain' at '%s'\n", __func__);
         return NULL;
     }
     char * copy = copied_chain;
@@ -410,7 +426,7 @@ void string_builder_append_test() {
     char expected[] = "John Smith";
     StringBuilder * string_builder = string_builder_create(1);
     string_builder_append_all(string_builder, "John");
-    string_builder_append(string_builder, ' ');
+    string_builder_append_one(string_builder, ' ');
     string_builder_append_all(string_builder, "Smith");
     char * given = string_builder_result(string_builder);
     assert(strcmp(given, expected) == 0, "The 'string_builder->built_chain' does not match expected chain");
@@ -434,9 +450,21 @@ void string_builder_result_as_copy_test() {
     string_builder_append_all(string_builder, input);
     char * given = string_builder_result_as_copy(string_builder);
     assert(given != NULL, "The 'string_builder->built_chain' copy must not be null");
-    assert(strcmp(given, "Extra-Ordinary Men") == 0, "The 'string_builder->built_chain' does not match expected chain");
+    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain");
     string_builder_destroy(string_builder);
     free(given);
+}
+
+void string_builder_destroy_except_chain_test() {
+    printf("*** Running test '%s'\n", __func__);
+    char input[] = "Don't think you will forgive you";
+    StringBuilder * string_builder = string_builder_create_default();
+    string_builder_append_all(string_builder, input);
+    char * given = string_builder_result(string_builder);
+    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain 1");
+    string_builder_destroy_except_chain(string_builder);
+    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain 2");
+    free(given); // We need to free it explicitly after usage (that's the drawback of this destroy method)
 }
 
 // Tests runner
@@ -453,4 +481,5 @@ int main() {
     string_builder_remove_multiple_times_test();
     string_builder_result_test();
     string_builder_result_as_copy_test();
+    string_builder_destroy_except_chain_test();
 }
