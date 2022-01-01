@@ -255,12 +255,7 @@ bool string_builder_remove(StringBuilder * string_builder, size_t start_index, s
     // Compute the amount of right side characters to shift to the left
     size_t amount_to_move = string_builder->used_capacity - (stop_index + 1);
     // Shift all the right side characters to the left
-    while (amount_to_move != 0) {
-        (* start) = (* next);
-        start++;
-        next++;
-        amount_to_move--;
-    }
+    memcpy(start, next, amount_to_move);
     // Finally, adjust the used capacity
     string_builder->used_capacity -= (stop_index - start_index) + 1;
     return true;
@@ -302,16 +297,11 @@ char * string_builder_result_as_copy(StringBuilder * string_builder) {
     }
     char * copy = copied_chain;
     char * original = string_builder->built_chain;
-    size_t left_to_copy = string_builder->used_capacity;
+    size_t amount_to_copy = string_builder->used_capacity;
     // Copy all the chars used in the "original chain" to the "copied chain"
-    while (left_to_copy != 0) {
-        (* copy) = (* original);
-        copy++;
-        original++;
-        left_to_copy--;
-    }
+    memcpy(copy, original, amount_to_copy);
     // Append the 'NULL' terminator at the last extra character
-    (* copy) = '\0';
+    (* (copy + amount_to_copy)) = '\0';
     return copied_chain;
 }
 
