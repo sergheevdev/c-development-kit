@@ -99,17 +99,17 @@
 
 // Definition (to be able to use methods before declaring them, to follow up the top-bottom code style)
 
-int string_builder_search_next_sequence_index(size_t current_size);
+int string_builder_compute_next_best_sequence_value_index(size_t capacity);
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount);
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount);
 
 // Structures
 
 struct string_builder {
-    char * built_chain;          // The array of characters (including garbage values)
-    size_t used_capacity;        // The amount of non-garbage used (or appended) characters
-    size_t max_capacity;         // The current maximum capacity (current max chars amount)
-    size_t next_sequence_index;  // The index of the next sequence value to which resize the array
+    char * built_chain;             // The array of characters (including garbage values)
+    size_t used_capacity;           // The amount of non-garbage used (or appended) characters
+    size_t max_capacity;            // The current maximum capacity (current max chars amount)
+    size_t current_sequence_index;  // The index of the current sequence value to which resize the array
 };
 
 // Default implementation values
@@ -143,26 +143,23 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
     string_builder->built_chain = built_chain;
     string_builder->used_capacity = 0;
     string_builder->max_capacity = initial_capacity;
-    string_builder->next_sequence_index = string_builder_search_next_sequence_index(initial_capacity);
+    string_builder->current_sequence_index = string_builder_compute_next_best_sequence_value_index(initial_capacity);
     // Return the new builder
     return string_builder;
 }
 
 // Searches the index of the next sequence value to which we must resize our buffer (simple binary search)
-int string_builder_search_next_sequence_index(size_t current_size) {
-    // If we are using default capacity, then the best is to resize the buffer from "16" to "26"
-    if (current_size == DEFAULT_INITIAL_CAPACITY) {
-        return 7;
-    }
+int string_builder_compute_next_best_sequence_value_index(size_t capacity) {
+    // If we are using default capacity, then the best is to resize the buffer from "16" to "26" (located at sequence index "7")
+    if (capacity == DEFAULT_INITIAL_CAPACITY) return 7;
     // Otherwise, if user-provided initial size is used, then find the next best in log(N) time
     int left = 0;
     int right = SEQUENCE_SIZE - 1;
-    size_t searched = current_size;
     // Middle always contains a cached value which is higher than "current size"
-    int middle = -1;
+    int middle = 0;
     while (left <= right) {
         middle = left + (right - left) / 2;
-        if (SEQUENCE[middle] <= searched) {
+        if (SEQUENCE[middle] <= capacity) {
             left = middle + 1;
         } else {
             right = middle - 1;
@@ -244,13 +241,19 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
 }
 
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount) {
-    size_t new_size = string_builder->max_capacity;
-    // While can't fit the requested chars amount and there are cached sequence values left, use the cached values
-    while (new_size - 1 < string_builder->used_capacity + chars_amount && string_builder->next_sequence_index < SEQUENCE_SIZE) {
-        new_size = SEQUENCE[string_builder->next_sequence_index++];
+    // While there are more cached sequence values to be checked and the sequence value at the given index is not enough to fit the required amount of chars
+    while (string_builder->current_sequence_index < SEQUENCE_SIZE && SEQUENCE[string_builder->current_sequence_index] - 1 < string_builder->used_capacity + chars_amount) {
+        // Move forward the index to the next sequence value
+        string_builder->current_sequence_index++;
     }
-    // If we still can't fit the requested chars amount, then compute the next sequence values (using the recurrence relation)
-    if (new_size - 1 < string_builder->used_capacity + chars_amount) {
+    size_t new_size;
+    // If the sequence index has not exceeded the max sequence index
+    if (string_builder->current_sequence_index < SEQUENCE_SIZE) {
+        // If the desired size (to fit the required chars) was found, use that sequence value, and also increment the sequence index (for the next computation)
+        new_size = SEQUENCE[string_builder->current_sequence_index++];
+    } else {
+        // Otherwise, use the last sequence value as a starting point for the recurrence relation (to compute the next sequence value) as we've run out of cached values
+        new_size = SEQUENCE[SEQUENCE_SIZE - 1];
         // Always ensure one extra spot for the string 'NULL' terminator
         // Pre-compute the required size before performing a "reallocation" to prevent "overhead"
         while (new_size - 1 < string_builder->used_capacity + chars_amount) {
