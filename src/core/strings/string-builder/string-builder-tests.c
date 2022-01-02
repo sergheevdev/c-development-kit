@@ -129,7 +129,7 @@ void string_builder_clear_test() {
     assert(string_builder_clear(string_builder), "The 'string_builder' clear must be successful");
     assert(strcmp(string_builder_result(string_builder), empty) == 0, "The 'string_builder' result chain must match the expected chain (2)");
     assert(string_builder_size(string_builder) == strlen(empty), "The 'string_builder' size must be equal to '0'");
-    assert(string_builder_max_capacity(string_builder) == 16, "The 'string_builder' capacity must equal to '16'");
+    assert(string_builder_max_capacity(string_builder) == 1, "The 'string_builder' capacity must equal to '16'");
     string_builder_destroy(string_builder);
 }
 

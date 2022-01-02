@@ -320,8 +320,8 @@ bool string_builder_clear(StringBuilder * string_builder) {
     // Reset properties to their default values
     string_builder->built_chain = new_chain;
     string_builder->used_capacity = 0;
-    string_builder->current_sequence_index = SEQUENCE_INIT_NEXT_INDEX;
-    string_builder->max_capacity = DEFAULT_INITIAL_CAPACITY;
+    string_builder->current_sequence_index = 2;
+    string_builder->max_capacity = 1;
     return true;
 }
 
