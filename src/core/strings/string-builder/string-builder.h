@@ -78,6 +78,20 @@ bool string_builder_append_all(StringBuilder * string_builder, char * chain);
 bool string_builder_remove(StringBuilder * string_builder, size_t start_index, size_t stop_index);
 
 /**
+ * Returns the amount of characters present in the given string builder.
+ *
+ * @return the size of the builder
+ */
+size_t string_builder_size(StringBuilder * string_builder);
+
+/**
+ * Returns the current maximum capacity of the given string builder.
+ *
+ * @return the current max capacity of the builder
+ */
+size_t string_builder_capacity(StringBuilder * string_builder);
+
+/**
  * Returns a pointer to the original built chain (which the builder uses internally).
  *
  * This pointer is freed (and therefore deallocated) when you use the default destroy method (use with caution).

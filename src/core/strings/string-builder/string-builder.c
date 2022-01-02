@@ -1,32 +1,36 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include "string-builder.h"
-
 /*
  * A Non Thread-Safe String Builder Implementation (with golden ratio as resize strategy).
  *
  * ### Explanation ###
  *
- * A string builder DS based on the idea of creating a mutable sequence of characters and providing utility operations
- * that can be used to mutate the string that is being built. In reality, the underlying structure is static, but it
- * uses dynamic memory to reallocate the memory section to a bigger one if more space is necessary.
+ * The "string builder" data structure based on the idea of creating a mutable sequence of characters and providing
+ * utility operations that can be used to mutate the string that is being built.
+ *
+ * For example, when concatenating strings in C, suppose the need to concat two strings A and B, to do so, first we
+ * need to allocate a new chain of size len(A)+len(B), then copy all contents from A and B to C, but we can delegate
+ * all this work to a builder, so we don't need to worrying about low-level "strings" memory management.
  *
  * This structure is used as an auxiliary structure on several string algorithms (i.e., 'replace all' algorithm).
  *
+ * ### Memory Blocks Can't Be Resized ###
+ *
  * In computer science we have kind of a problem, because once we allocate a block of memory, if we want to extend that
- * block to a larger size (for more space), we can't, we need to allocate a new block of the new larger size and copy
+ * block to a larger size (for more space), we can't, we need to allocate a new block of the new larger size, and copy
  * all the contents from the old block to the new one, finally freeing the old block contents and using the new one.
+ *
+ * More info about this limitation: https://stackoverflow.com/a/26836095
  *
  * ### Strategies ###
  *
- * There are several implementation strategies for this data structure, when we talk about a "strategy" we mean the
- * "reallocation strategy", to what "new size" resize the "old size"? what "increment" to use?
+ * A "reallocation strategy" is said to be the new size to which we need to resize the array of characters, when we
+ * run out of space (because no more chars fit in the current array).
+ *
+ * Now the raised question is: to what "new size" resize the "old size"?
  *
  * The simplest strategy one might think of may be use of this formula: "new size = old size + constant", where the
  * constant is simply a constant amount of space to be incremented each time we run out of space.
  *
- * #### Basic Strategy - Constant Resize Increment ####
+ * ### Constant Resize Increment Strategy ###
  *
  * Let's suppose we implemented the previously mentioned simplest strategy with the following parameters:
  * - I = initial capacity = 1000
@@ -37,19 +41,9 @@
  * enough to fit one more char, if not, we resize the char array from 1000 to 2000 chars, and then append 1001 th
  * char when the reallocation had been performed.
  *
- * Remember that each time we ensure the capacity, if no more chars fit, we create a new array of higher size, and
- * all contents are copied from the old char array to the new one, character by character.
- *
- * The first reallocation requires us to copy K chars, the second one required 2K, the third 3K, the fourth 4K, the
+ * The first reallocation requires us to copy K chars, the second one requires 2K, the third 3K, the fourth 4K, the
  * fifth 5K and so on. The total time complexity will be O(K + 2K + 3K + ... + NK), this ends up in an O(N^2) worst
- * time complexity. How do we know that? Because we use the gauss series formula that tells us that "1 + 2 + ... + N"
- * is equal to "N * (N + 1) / 2", which turns out to be "O(N^2)", and by simplifying the big O notation. Note the
- * multiplication, because that's the main reason why we get the N-squared time, "N * (N + 1) / 2" which can be
- * simplified to "(N^2 + N) / 2", which is basically "N^2".
- *
- * If we are curious and try to build a huge string (i.e. 1 million chars long string) we'll discover that this
- * implementation wastes a lot of time and space (memory). Please note that here the word "string" and "char array"
- * are used interchangeably.
+ * time complexity. Why? Because of the gauss series "1 + 2 + ... + N" ≈ "N * (N + 1) / 2" ≈ "(N^2 + N) / 2" ≈ "N^2".
  *
  * Supposing that we might end up with a 1 million chars string, we can compute the total amount of wasted memory by
  * using K = resize increment, the applied gauss series will be the following:
@@ -60,44 +54,41 @@
  *
  * "N (a1 + aN) / 2" = "1000 * (1000 + 1000000) / 2" = "500500000" wasted chars (in space)
  *
- * The good thing is that now we know that the amount of wasted space is bounded to the K (resize increment) value,
- * which might be useful for some use cases. Also note that if we got a builder of size "999000" when we increase
- * its capacity to "1000000" we need to allocate a whole new array of "1000000" chars, so we might end up having at
- * the same time approximately 2 million characters in memory for a short period of time (until reallocation is
- * completed).
+ * We might end up having at the same time 2 million characters in memory for a short period of time.
  *
- * As we have seen this basic strategy is really simple to implement, and it's useful when you know approximately
- * the expected final size or growth of the final string, but usually we don't know this metric.
- *
- * #### This Implementation Strategy - Golden Ratio ####
+ * ### Golden Ratio/Mean Strategy (!!!used in this implementation!!!) ###
  *
  * This implementation uses the godel ratio as a growth factor, instead of a constant resize increment, this value is
  * often similar to the golden mean (~1.6) but a little bit smaller, most implementations use the 1.5 value and this
  * works great in practice.
  *
- * #### Other Strategies ####
+ * ### Other Strategies ###
  *
  * - Usage of a "double when full" strategy instead of defining a constant resize increment.
- * - Using a "linked list of blocks" (this implementation only prevents the amortized complexity of reallocation, but
- *   in the end you always need to turn the whole thing into a string which can be really expensive because of the poor
- *   locality).
+ * - Using a "linked list of blocks" (prevents the amortized complexity of reallocation, but poor locality & construction).
  *
  * ### References ###
  *
- * @see https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
- * @see https://stackoverflow.com/questions/9252891/big-o-what-is-the-complexity-of-summing-a-series-of-n-numbers
- * @see https://math.stackexchange.com/questions/2844825/time-complexity-from-an-arithmetic-series/2844851#2844851
- * @see https://mathbitsnotebook.com/Algebra2/Sequences/SSGauss.html
- * @see https://news.ycombinator.com/item?id=8555550
+ * - https://stackoverflow.com/questions/10196942/how-much-to-grow-buffer-in-a-stringbuilder-like-c-module
+ * - https://stackoverflow.com/questions/9252891/big-o-what-is-the-complexity-of-summing-a-series-of-n-numbers
+ * - https://math.stackexchange.com/questions/2844825/time-complexity-from-an-arithmetic-series/2844851#2844851
+ * - https://mathbitsnotebook.com/Algebra2/Sequences/SSGauss.html
+ * - https://news.ycombinator.com/item?id=8555550
  */
 
-// Declaration of internal methods (to be able to order them in top-bottom style)
+// Imports & Headers
+
+#include <stdlib.h>         // For "malloc", "realloc", "free" (memory management)
+#include <stdio.h>          // For "printf", "stderr" (printing errors)
+#include <string.h>         // For "memcpy", "strlen" (better memory copy and utils)
+#include "string-builder.h"
+
+// Definition (to be able to use methods before declaring them, to follow up the top-bottom code style)
 
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount);
-void string_builder_write_unsafe(StringBuilder * string_builder, char character);
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount);
 
-// Implementation of the string builder
+// Structures
 
 struct string_builder {
     char * built_chain;
@@ -131,6 +122,7 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
     string_builder->built_chain = built_chain;
     string_builder->used_capacity = 0;
     string_builder->max_capacity = initial_capacity;
+    // Return the new builder
     return string_builder;
 }
 
@@ -139,13 +131,17 @@ bool string_builder_append_one(StringBuilder * string_builder, char character) {
         fprintf(stderr, "Trying to append a character to a 'NULL' builder at '%s'\n", __func__);
         return false;
     }
-    // Ensure that the builder capacity allows one more character to be appended, otherwise resize the chain
+    // Ensure there is size for one more character to be appended, otherwise resize the chain
     bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, 1);
-    // If ensuring the capacity wasn't possible, then the "append" operation failed
+    // If ensuring the capacity wasn't possible, then the "append operation" failed
     if (!is_capacity_ensured) return false;
-    // We can use the "write unsafe" operation because we've ensured the capacity and the builder non-nullability
-    string_builder_write_unsafe(string_builder, character);
-    // Return a successful append result
+    // Get the last unused character position, which is where the new character is to be appended
+    char * last_unused = string_builder->built_chain + string_builder->used_capacity;
+    // Assign the character value
+    (* last_unused) = character;
+    // Increase the amount of used characters
+    string_builder->used_capacity++;
+    // Return a successful result
     return true;
 }
 
@@ -161,29 +157,20 @@ bool string_builder_append_all(StringBuilder * string_builder, char * chain) {
         fprintf(stderr, "Trying to append a 'NULL' chain to a builder at '%s'\n", __func__);
         return false;
     }
-    // Ensure that the builder capacity allows for N more characters to be appended, otherwise resize the chain
-    bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, strlen(chain));
-    // If ensuring the capacity wasn't possible, then the "append all" operation failed
+    // Obtain the size of the chain to be appended
+    size_t chain_size = strlen(chain);
+    // Ensure there is size for N more character to be appended, otherwise resize the chain
+    bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, chain_size);
+    // If ensuring the capacity wasn't possible, then the "append all operation" failed
     if (!is_capacity_ensured) return false;
-    // Append all the chars
-    for (char * current = chain; * current != '\0'; current++) {
-        // We can use the "write unsafe" operation because we've ensured the capacity and the builder non-nullability
-        string_builder_write_unsafe(string_builder, (*current));
-    }
-    // Return a successful append all result
-    return true;
-}
-
-/**
- * @note the PRECONDITIONS to use this method are: to have a free slot to append one char and the builder non-nullability
- */
-void string_builder_write_unsafe(StringBuilder * string_builder, char character) {
-    // Get the last unused character position, which is where the new character is to be appended
-    char * last_unused = string_builder->built_chain + string_builder->used_capacity;
-    // Assign the character value
-    (* last_unused) = character;
+    // Append all the chars to the builder
+    char * from = chain;
+    char * to = string_builder->built_chain + string_builder->used_capacity;
+    memcpy(to, from, chain_size);
     // Increase the amount of used characters
-    string_builder->used_capacity++;
+    string_builder->used_capacity += chain_size;
+    // Return a successful result
+    return true;
 }
 
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount) {
@@ -195,13 +182,13 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
         fprintf(stderr, "The 'chars_amount' must be an integer bigger or equal to '1' at '%s'\n", __func__);
         return false;
     }
-    // If there is enough capacity for the requested characters, then there's no need to perform a reallocation
+    // If there is enough capacity for N more chars, then no need to resize the chain
     if (string_builder->max_capacity - 1 >= string_builder->used_capacity + chars_amount) {
         return true;
     }
     // Otherwise, we pre-compute the new size for our chain according to our chosen strategy
     size_t new_size = string_builder_compute_new_size(string_builder, chars_amount);
-    // Resize the chain using the previously pre-computed new size
+    // Resize the chain according to the previously pre-computed new size
     char * resized_chain = realloc(string_builder->built_chain, sizeof(char) * new_size);
     if (resized_chain == NULL) {
         fprintf(stderr, "Unable to reallocate memory for 'resized_chain' at '%s'\n", __func__);
@@ -210,6 +197,7 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
     // Assign the new chain and new capacity values
     string_builder->built_chain = resized_chain;
     string_builder->max_capacity = new_size;
+    // Return a successful result
     return true;
 }
 
@@ -258,6 +246,7 @@ bool string_builder_remove(StringBuilder * string_builder, size_t start_index, s
     memcpy(start, next, amount_to_move);
     // Finally, adjust the used capacity
     string_builder->used_capacity -= (stop_index - start_index) + 1;
+    // Return a successful result
     return true;
 }
 
@@ -305,6 +294,14 @@ char * string_builder_result_as_copy(StringBuilder * string_builder) {
     return copied_chain;
 }
 
+size_t string_builder_size(StringBuilder * string_builder) {
+    return string_builder->used_capacity;
+}
+
+size_t string_builder_capacity(StringBuilder * string_builder) {
+    return string_builder->max_capacity;
+}
+
 void string_builder_destroy(StringBuilder * string_builder) {
     if (string_builder != NULL) {
         if (string_builder->built_chain != NULL) {
@@ -318,158 +315,4 @@ void string_builder_destroy_except_chain(StringBuilder * string_builder) {
     if (string_builder != NULL) {
         free(string_builder);
     }
-}
-
-// Assertion snippet (not abstracted away for piece of code portability)
-void assert(int condition, char message[]) {
-    if (condition != 1) {
-        printf("%s\n", message);
-        exit(1);
-    }
-}
-
-// Unit testing
-
-void string_builder_create_default_test() {
-    printf("*** Running test '%s'\n", __func__);
-    StringBuilder * string_builder = string_builder_create_default();
-    if (string_builder == NULL) exit(1);
-    assert(string_builder != NULL, "The 'string_builder' must not be null");
-    assert(string_builder->built_chain != NULL, "The 'string_builder->built_chain' must not be null");
-    assert(string_builder->used_capacity == 0, "The 'string_builder->used_capacity' must be equal to zero");
-    assert(string_builder->max_capacity == DEFAULT_INITIAL_CAPACITY, "The 'string_builder->max_capacity' must be equal to 'DEFAULT_INITIAL_CAPACITY'");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_create_with_custom_capacity_test() {
-    printf("*** Running test '%s'\n", __func__);
-    StringBuilder * string_builder = string_builder_create(0);
-    assert(string_builder != NULL, "The 'string_builder' must not be null");
-    assert(string_builder->built_chain != NULL, "The 'string_builder->built_chain' must not be null");
-    assert(string_builder->used_capacity == 0, "The 'string_builder->used_capacity' must be equal to zero");
-    assert(string_builder->max_capacity == 0, "The 'string_builder->max_capacity' must be equal to '0'");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_remove_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "Hello world, I am a fancy string builder";
-    char expected[] = "I am a fancy string builder";
-    StringBuilder * string_builder = string_builder_create(1);
-    string_builder_append_all(string_builder, input);
-    string_builder_remove(string_builder, 0, 12); // Delete piece "Hello world, "
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, expected) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    assert(string_builder->used_capacity == strlen(given), "The 'string_builder->used_capacity' does not match expected length");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_remove_from_empty_test() {
-    printf("*** Running test '%s'\n", __func__);
-    StringBuilder * string_builder = string_builder_create_default();
-    bool success = string_builder_remove(string_builder, 0, 0);
-    assert(success == false, "The remove operation must have thrown an error");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_remove_edge_case_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char expected[] = "H";
-    StringBuilder * string_builder = string_builder_create_default();
-    string_builder_append_all(string_builder, "H");
-    string_builder_remove(string_builder, 0, 1);
-    assert(strcmp(string_builder_result(string_builder), expected) == 0, "The 'string_builder->built_chain' does not match expected chain"); // Must remain the same
-    string_builder_remove(string_builder, 0, 0);
-    assert(strcmp(string_builder_result(string_builder), "") == 0, "The 'string_builder->built_chain' does not match expected chain"); // Must be empty
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_remove_multiple_times_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "Hello world, I am a fancy string builder";
-    char expected[] = "I am fancy";
-    StringBuilder * string_builder = string_builder_create(4);
-    string_builder_append_all(string_builder, input);
-    string_builder_remove(string_builder, 0, 12); // Delete piece "Hello world, "
-    string_builder_remove(string_builder, 4, 5); // Delete piece " a"
-    string_builder_remove(string_builder, 10, 24); // Delete piece " string builder"
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, expected) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    assert(string_builder->used_capacity == strlen(given), "The 'string_builder->used_capacity' does not match expected length");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_ensure_capacity_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "AAAAAAAAAAAAAAA";
-    StringBuilder * string_builder = string_builder_create(1);
-    string_builder_append_all(string_builder, input);
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    assert(string_builder->used_capacity == strlen(input), "The 'string_builder->used_capacity' does not match expected length");
-    assert(string_builder->max_capacity == 17, "The 'string_builder->max_capacity' does not match expected value"); // Resizes: 2, 4, 7, 11, [17], 26, 40, 61
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_append_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char expected[] = "John Smith";
-    StringBuilder * string_builder = string_builder_create(1);
-    string_builder_append_all(string_builder, "John");
-    string_builder_append_one(string_builder, ' ');
-    string_builder_append_all(string_builder, "Smith");
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, expected) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_result_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "Spiderman";
-    StringBuilder * string_builder = string_builder_create_default();
-    string_builder_append_all(string_builder, input);
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    string_builder_destroy(string_builder);
-}
-
-void string_builder_result_as_copy_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "Extra-Ordinary Men";
-    StringBuilder * string_builder = string_builder_create_default();
-    string_builder_append_all(string_builder, input);
-    char * given = string_builder_result_as_copy(string_builder);
-    assert(given != NULL, "The 'string_builder->built_chain' copy must not be null");
-    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain");
-    string_builder_destroy(string_builder);
-    free(given);
-}
-
-void string_builder_destroy_except_chain_test() {
-    printf("*** Running test '%s'\n", __func__);
-    char input[] = "Don't think you will forgive you";
-    StringBuilder * string_builder = string_builder_create_default();
-    string_builder_append_all(string_builder, input);
-    char * given = string_builder_result(string_builder);
-    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain 1");
-    string_builder_destroy_except_chain(string_builder);
-    assert(strcmp(given, input) == 0, "The 'string_builder->built_chain' does not match expected chain 2");
-    free(given); // We need to free it explicitly after usage (that's the drawback of this destroy method)
-}
-
-// Tests runner
-
-int main() {
-    fclose(stderr); // Prevent printing "expected" errors
-    string_builder_create_default_test();
-    string_builder_create_with_custom_capacity_test();
-    string_builder_ensure_capacity_test();
-    string_builder_append_test();
-    string_builder_remove_test();
-    string_builder_remove_from_empty_test();
-    string_builder_remove_edge_case_test();
-    string_builder_remove_multiple_times_test();
-    string_builder_result_test();
-    string_builder_result_as_copy_test();
-    string_builder_destroy_except_chain_test();
 }
