@@ -91,6 +91,15 @@ bool string_builder_append_all(StringBuilder * string_builder, char * chain);
 bool string_builder_remove(StringBuilder * string_builder, size_t start_index, size_t stop_index);
 
 /**
+ * Clears the builder contents and resets it to its default capacity.
+ *
+ * @param string_builder the string builder that is to be cleared
+ *
+ * @return {@code true} if the clearing the builder was successful, {@code false} otherwise
+ */
+bool string_builder_clear(StringBuilder * string_builder);
+
+/**
  * Returns the amount of characters present in the given string builder.
  *
  * @return the size of the builder
@@ -102,7 +111,7 @@ size_t string_builder_size(StringBuilder * string_builder);
  *
  * @return the current max capacity of the builder
  */
-size_t string_builder_capacity(StringBuilder * string_builder);
+size_t string_builder_max_capacity(StringBuilder * string_builder);
 
 /**
  * Returns a pointer to the original built chain (which the builder uses internally).

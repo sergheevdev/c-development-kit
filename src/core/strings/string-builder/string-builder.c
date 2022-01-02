@@ -113,12 +113,14 @@ struct string_builder {
 };
 
 // Default implementation values
+
 static const size_t DEFAULT_INITIAL_CAPACITY = 16;
 
-// Precomputed (or cached) "A006999" sequence: new_size = floor(old_size * 1.5) + 1
+// Precomputed (or cached) "A006999" sequence: "new_size = floor(old_size * 1.5) + 1"
 
 static const size_t SEQUENCE[] = { 0, 1, 2, 4, 7, 11, 17, 26, 40, 61, 92, 139, 209, 314, 472, 709, 1064, 1597, 2396, 3595, 5393, 8090, 12136, 18205, 27308, 40963, 61445, 92168, 138253, 207380, 311071, 466607, 699911, 1049867, 1574801, 2362202, 3543304, 5314957, 7972436, 11958655, 17937983, 26906975, 40360463, 60540695, 90811043, 136216565, 204324848, 306487273, 459730910, 689596366, 1034394550 };
 static const int SEQUENCE_SIZE = sizeof(SEQUENCE) / sizeof(size_t);
+static const size_t SEQUENCE_INIT_NEXT_INDEX = 7;
 
 StringBuilder * string_builder_create_default() {
     return string_builder_create(DEFAULT_INITIAL_CAPACITY);
@@ -151,7 +153,7 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
 // Searches the index of the next sequence value to which we must resize our buffer (simple binary search)
 int string_builder_compute_next_best_sequence_value_index(size_t capacity) {
     // If we are using default capacity, then the best is to resize the buffer from "16" to "26" (located at sequence index "7")
-    if (capacity == DEFAULT_INITIAL_CAPACITY) return 7;
+    if (capacity == DEFAULT_INITIAL_CAPACITY) return SEQUENCE_INIT_NEXT_INDEX;
     // Otherwise, if user-provided initial size is used, then find the next best in log(N) time
     int left = 0;
     int right = SEQUENCE_SIZE - 1;
@@ -301,6 +303,28 @@ bool string_builder_remove(StringBuilder * string_builder, size_t start_index, s
     return true;
 }
 
+bool string_builder_clear(StringBuilder * string_builder) {
+    if (string_builder == NULL) {
+        fprintf(stderr, "Trying to clear a 'NULL' builder at '%s'\n", __func__);
+        return false;
+    }
+    char * new_chain = malloc(sizeof(char) * 1);
+    if (new_chain == NULL) {
+        fprintf(stderr, "Unable to allocate memory for 'new_chain' at '%s'\n", __func__);
+        return false;
+    }
+    // Append the 'NULL' terminator
+    (* new_chain) = '\0';
+    // Free the old chain memory
+    free(string_builder->built_chain);
+    // Reset properties to their default values
+    string_builder->built_chain = new_chain;
+    string_builder->used_capacity = 0;
+    string_builder->current_sequence_index = SEQUENCE_INIT_NEXT_INDEX;
+    string_builder->max_capacity = DEFAULT_INITIAL_CAPACITY;
+    return true;
+}
+
 char * string_builder_result(StringBuilder * string_builder) {
     if (string_builder == NULL) {
         fprintf(stderr, "Trying to get the result of a 'NULL' builder at '%s'\n", __func__);
@@ -349,7 +373,7 @@ size_t string_builder_size(StringBuilder * string_builder) {
     return string_builder->used_capacity;
 }
 
-size_t string_builder_capacity(StringBuilder * string_builder) {
+size_t string_builder_max_capacity(StringBuilder * string_builder) {
     return string_builder->max_capacity;
 }
 
