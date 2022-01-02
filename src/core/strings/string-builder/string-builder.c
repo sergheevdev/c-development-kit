@@ -87,6 +87,7 @@
  * - https://math.stackexchange.com/questions/2844825/time-complexity-from-an-arithmetic-series/2844851#2844851
  * - https://mathbitsnotebook.com/Algebra2/Sequences/SSGauss.html
  * - https://news.ycombinator.com/item?id=8555550
+ * - https://oeis.org/A006999
  */
 
 // Imports & Headers
@@ -98,19 +99,26 @@
 
 // Definition (to be able to use methods before declaring them, to follow up the top-bottom code style)
 
+int string_builder_search_next_sequence_index(size_t current_size);
 bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars_amount);
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount);
 
 // Structures
 
 struct string_builder {
-    char * built_chain;
-    size_t used_capacity;
-    size_t max_capacity;
+    char * built_chain;          // The array of characters (including garbage values)
+    size_t used_capacity;        // The amount of non-garbage used (or appended) characters
+    size_t max_capacity;         // The current maximum capacity
+    size_t next_sequence_index;  // The index of the next sequence value to which resize the array
 };
 
 // Default implementation values
-static const int DEFAULT_INITIAL_CAPACITY = 16;
+static const size_t DEFAULT_INITIAL_CAPACITY = 16;
+
+// Precomputed (or cached) "A006999" sequence ~ new_size = floor(old_size * 1.5) + 1
+
+static const size_t SEQUENCE[] = { 0, 1, 2, 4, 7, 11, 17, 26, 40, 61, 92, 139, 209, 314, 472, 709, 1064, 1597, 2396, 3595, 5393, 8090, 12136, 18205, 27308, 40963, 61445, 92168, 138253, 207380, 311071, 466607, 699911, 1049867, 1574801, 2362202, 3543304, 5314957, 7972436, 11958655, 17937983, 26906975, 40360463, 60540695, 90811043, 136216565, 204324848, 306487273, 459730910, 689596366, 1034394550 };
+static const int SEQUENCE_SIZE = sizeof(SEQUENCE) / sizeof(size_t);
 
 StringBuilder * string_builder_create_default() {
     return string_builder_create(DEFAULT_INITIAL_CAPACITY);
@@ -135,8 +143,32 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
     string_builder->built_chain = built_chain;
     string_builder->used_capacity = 0;
     string_builder->max_capacity = initial_capacity;
+    string_builder->next_sequence_index = string_builder_search_next_sequence_index(initial_capacity);
     // Return the new builder
     return string_builder;
+}
+
+// Searches the index of the next sequence value to which we must resize our buffer (simple binary search)
+int string_builder_search_next_sequence_index(size_t current_size) {
+    // If we are using default capacity, then the best is to resize the buffer from "16" to "26"
+    if (current_size == DEFAULT_INITIAL_CAPACITY) {
+        return 7;
+    }
+    // Otherwise, if use-specified value is used then find the next best size in log(N) time
+    int left = 0;
+    int right = SEQUENCE_SIZE - 1;
+    size_t searched = current_size;
+    // Middle always contains the searched value upper bound
+    int middle = -1;
+    while (left <= right) {
+        middle = left + (right - left) / 2;
+        if (SEQUENCE[middle] <= searched) {
+            left = middle + 1;
+        } else {
+            right = middle - 1;
+        }
+    }
+    return middle;
 }
 
 bool string_builder_append_one(StringBuilder * string_builder, char character) {
@@ -158,9 +190,6 @@ bool string_builder_append_one(StringBuilder * string_builder, char character) {
     return true;
 }
 
-/**
- * @note that we pre-compute the necessary slots and then we reallocate only ONCE, instead of performing M reallocations
- */
 bool string_builder_append_all(StringBuilder * string_builder, char * chain) {
     if (string_builder == NULL) {
         fprintf(stderr, "Trying to append a character to a 'NULL' builder at '%s'\n", __func__);
@@ -215,14 +244,20 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
 }
 
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount) {
-    // Declare the new size
     size_t new_size = string_builder->max_capacity;
-    // Always ensure one extra spot for the string 'NULL' terminator
-    // Pre-compute the required size before performing a "reallocation" to prevent "overhead"
-    while (new_size - 1 < string_builder->used_capacity + chars_amount) {
-        // Same as "new_size = old_size * 1.5" or "new_size = (old_size * 3) / 2", where "1.5" is approximately ~ the golden ratio
-        // See that we add an extra "+1" to prevent getting stuck at size = "1" (because the bit operation truncates decimals)
-        new_size = ((new_size + (new_size << 1)) >> 1) + 1;
+    // While can't fit the requested chars amount and there are cached sequence values left, use the cached values
+    while (new_size - 1 < string_builder->used_capacity + chars_amount && string_builder->next_sequence_index < SEQUENCE_SIZE) {
+        new_size = SEQUENCE[string_builder->next_sequence_index++];
+    }
+    // If we still can't fit the requested chars amount, then compute the next sequence values (using the recurrence relation)
+    if (new_size - 1 < string_builder->used_capacity + chars_amount) {
+        // Always ensure one extra spot for the string 'NULL' terminator
+        // Pre-compute the required size before performing a "reallocation" to prevent "overhead"
+        while (new_size - 1 < string_builder->used_capacity + chars_amount) {
+            // Same as "new_size = old_size * 1.5" or "new_size = (old_size * 3) / 2", where "1.5" is approximately ~ the golden ratio
+            // See that we add an extra "+1" to prevent getting stuck at size = "1" (because the bit operation truncates decimals)
+            new_size = ((new_size + (new_size << 1)) >> 1) + 1;
+        }
     }
     // Return the new size
     return new_size;
