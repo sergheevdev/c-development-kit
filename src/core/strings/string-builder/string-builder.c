@@ -108,14 +108,14 @@ size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t ch
 struct string_builder {
     char * built_chain;          // The array of characters (including garbage values)
     size_t used_capacity;        // The amount of non-garbage used (or appended) characters
-    size_t max_capacity;         // The current maximum capacity
+    size_t max_capacity;         // The current maximum capacity (current max chars amount)
     size_t next_sequence_index;  // The index of the next sequence value to which resize the array
 };
 
 // Default implementation values
 static const size_t DEFAULT_INITIAL_CAPACITY = 16;
 
-// Precomputed (or cached) "A006999" sequence ~ new_size = floor(old_size * 1.5) + 1
+// Precomputed (or cached) "A006999" sequence: new_size = floor(old_size * 1.5) + 1
 
 static const size_t SEQUENCE[] = { 0, 1, 2, 4, 7, 11, 17, 26, 40, 61, 92, 139, 209, 314, 472, 709, 1064, 1597, 2396, 3595, 5393, 8090, 12136, 18205, 27308, 40963, 61445, 92168, 138253, 207380, 311071, 466607, 699911, 1049867, 1574801, 2362202, 3543304, 5314957, 7972436, 11958655, 17937983, 26906975, 40360463, 60540695, 90811043, 136216565, 204324848, 306487273, 459730910, 689596366, 1034394550 };
 static const int SEQUENCE_SIZE = sizeof(SEQUENCE) / sizeof(size_t);
@@ -154,11 +154,11 @@ int string_builder_search_next_sequence_index(size_t current_size) {
     if (current_size == DEFAULT_INITIAL_CAPACITY) {
         return 7;
     }
-    // Otherwise, if use-specified value is used then find the next best size in log(N) time
+    // Otherwise, if user-provided initial size is used, then find the next best in log(N) time
     int left = 0;
     int right = SEQUENCE_SIZE - 1;
     size_t searched = current_size;
-    // Middle always contains the searched value upper bound
+    // Middle always contains a cached value which is higher than "current size"
     int middle = -1;
     while (left <= right) {
         middle = left + (right - left) / 2;
