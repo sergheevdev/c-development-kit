@@ -11,11 +11,12 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-#include <stdbool.h>
+#include <stdbool.h>   // For "true", "false" (boolean constants)
+#include <stddef.h>    // For "size_t" (size type)
 
 /* string-builder.h */
-#ifndef STRING_BUILDER_H
-#define STRING_BUILDER_H
+#ifndef STRINGS_STRING_BUILDER_H
+#define STRINGS_STRING_BUILDER_H
 
 typedef struct string_builder StringBuilder;
 
@@ -135,4 +136,4 @@ char * string_builder_result(StringBuilder * string_builder);
  */
 char * string_builder_result_as_copy(StringBuilder * string_builder);
 
-#endif /* STRING_BUILDER_H */
+#endif /* STRINGS_STRING_BUILDER_H */

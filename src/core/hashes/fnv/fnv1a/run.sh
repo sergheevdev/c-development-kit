@@ -5,7 +5,7 @@ rm -rf main
 rm -rf report.txt
 
 # Compile and run with valgrind
-gcc -O0 -g -o main string-builder-tests.c string-builder.c
+gcc -O0 -g -o main fnv1a-tests.c fnv1a.c
 valgrind --leak-check=full \
          --show-leak-kinds=all \
          --track-origins=yes \

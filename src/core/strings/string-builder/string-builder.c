@@ -120,7 +120,7 @@ static const size_t DEFAULT_INITIAL_CAPACITY = 16;
 
 static const size_t SEQUENCE[] = { 0, 1, 2, 4, 7, 11, 17, 26, 40, 61, 92, 139, 209, 314, 472, 709, 1064, 1597, 2396, 3595, 5393, 8090, 12136, 18205, 27308, 40963, 61445, 92168, 138253, 207380, 311071, 466607, 699911, 1049867, 1574801, 2362202, 3543304, 5314957, 7972436, 11958655, 17937983, 26906975, 40360463, 60540695, 90811043, 136216565, 204324848, 306487273, 459730910, 689596366, 1034394550 };
 static const int SEQUENCE_SIZE = sizeof(SEQUENCE) / sizeof(size_t);
-static const size_t SEQUENCE_INIT_NEXT_INDEX = 7;
+static const size_t SEQUENCE_INIT_NEXT_INDEX = 7; // Best next sequence value index (for initial capacity = "16")
 
 StringBuilder * string_builder_create_default() {
     return string_builder_create(DEFAULT_INITIAL_CAPACITY);
@@ -150,14 +150,14 @@ StringBuilder * string_builder_create(size_t initial_capacity) {
     return string_builder;
 }
 
-// Searches the index of the next sequence value to which we must resize our buffer (simple binary search)
+// Searches the index of the next sequence value to which we must resize our buffer (i.e., simple binary search)
 int string_builder_compute_next_best_sequence_value_index(size_t capacity) {
-    // If we are using default capacity, then the best is to resize the buffer from "16" to "26" (located at sequence index "7")
+    // If default capacity provided, then the best is to resize the buffer from "16" to "26" chars (located at sequence index "7")
+    // Otherwise, if custom initial size is provided, then find the next best in log(N) time (binary searching the sequence values)
     if (capacity == DEFAULT_INITIAL_CAPACITY) return SEQUENCE_INIT_NEXT_INDEX;
-    // Otherwise, if user-provided initial size is used, then find the next best in log(N) time
     int left = 0;
     int right = SEQUENCE_SIZE - 1;
-    // Middle always contains a cached value which is higher than "current size"
+    // Middle always contains a sequence value which is higher than "capacity" provided parameter (i.e., the next resize size)
     int middle = 0;
     while (left <= right) {
         middle = left + (right - left) / 2;
@@ -200,13 +200,13 @@ bool string_builder_append_all(StringBuilder * string_builder, char * chain) {
     }
     // Obtain the size of the chain to be appended
     size_t chain_size = strlen(chain);
-    // Ensure there is size for N more character to be appended, otherwise resize the chain
+    // Ensure there is size for N more characters to be appended, otherwise resize the chain
     bool is_capacity_ensured = string_builder_ensure_capacity(string_builder, chain_size);
     // If ensuring the capacity wasn't possible, then the "append all operation" failed
     if (!is_capacity_ensured) return false;
     // Append all the chars to the builder
-    char * from = chain;
     char * to = string_builder->built_chain + string_builder->used_capacity;
+    char * from = chain;
     memcpy(to, from, chain_size);
     // Increase the amount of used characters
     string_builder->used_capacity += chain_size;
@@ -223,7 +223,7 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
         fprintf(stderr, "The 'chars_amount' must be an integer bigger or equal to '1' at '%s'\n", __func__);
         return false;
     }
-    // If there is enough capacity for N more chars, then no need to resize the chain
+    // If there is enough capacity for N more chars, then there's no need to resize the chain
     if (string_builder->max_capacity - 1 >= string_builder->used_capacity + chars_amount) {
         return true;
     }
@@ -243,13 +243,13 @@ bool string_builder_ensure_capacity(StringBuilder * string_builder, size_t chars
 }
 
 size_t string_builder_compute_new_size(StringBuilder * string_builder, size_t chars_amount) {
-    // While there are more cached sequence values to be checked and the sequence value at the given index is not enough to fit the required amount of chars
+    // While there are more cached sequence values to be checked, and the sequence value at the given index is not enough to fit the required amount of chars
     while (string_builder->current_sequence_index < SEQUENCE_SIZE && SEQUENCE[string_builder->current_sequence_index] - 1 < string_builder->used_capacity + chars_amount) {
         // Move forward the index to the next sequence value
         string_builder->current_sequence_index++;
     }
     size_t new_size;
-    // If the sequence index has not exceeded the max sequence index
+    // If the sequence index has not exceeded the max sequence index (then a cached sequence value can be used as the new resize size)
     if (string_builder->current_sequence_index < SEQUENCE_SIZE) {
         // If the desired size (to fit the required chars) was found, use that sequence value, and also increment the sequence index (for the next computation)
         new_size = SEQUENCE[string_builder->current_sequence_index++];
@@ -366,6 +366,7 @@ char * string_builder_result_as_copy(StringBuilder * string_builder) {
     memcpy(copy, original, amount_to_copy);
     // Append the 'NULL' terminator at the last extra character
     (* (copy + amount_to_copy)) = '\0';
+    // Return the copied chain
     return copied_chain;
 }
 
