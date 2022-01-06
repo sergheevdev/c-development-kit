@@ -22,28 +22,28 @@
 /**
  * Returns a 32 bit integer hash of the given bytes.
  *
- * @return the hash value, or {@code -1} if the bytes value is {@code NULL}, or {@code 0} if the length is <= 0
+ * @return the hash value, or {@code 0} if the bytes value is {@code NULL} or the length is <= 0
  */
 uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length);
 
 /**
  * Returns a 32 bit integer hash of the given text.
  *
- * @return the hash value, or {@code -1} if the text value is {@code NULL}
+ * @return the hash value, or {@code 0} if the text value is {@code NULL}
  */
 uint32_t hashes_fnv1a_hash32_str(const char * text);
 
 /**
  * Returns a 64 bit integer hash of the given bytes.
  *
- * @return the hash value, or {@code -1} if the bytes value is {@code NULL}, or {@code 0} if the length is <= 0
+ * @return the hash value, or {@code 0} if the bytes value is {@code NULL} or the length is <= 0
  */
 uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length);
 
 /**
  * Returns a 64 bit integer hash of the given text.
  *
- * @return the hash value, or {@code -1} if the text value is {@code NULL}
+ * @return the hash value, or {@code 0} if the text value is {@code NULL}
  */
 uint64_t hashes_fnv1a_hash64_str(const char * text);
 

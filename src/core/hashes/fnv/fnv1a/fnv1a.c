@@ -43,7 +43,7 @@ static const uint32_t PRIME_32 = 16777619;
 uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length) {
     if (bytes == NULL) {
         fprintf(stderr, "Trying to hash 'NULL' bytes at '%s'\n", __func__);
-        return -1;
+        return 0;
     }
     if (length <= 0) {
         fprintf(stderr, "The 'length' must be greater than zero at '%s'\n", __func__);
@@ -69,7 +69,7 @@ static const uint64_t PRIME_64 = 1099511628211;
 uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length) {
     if (bytes == NULL) {
         fprintf(stderr, "Trying to hash 'NULL' bytes at '%s'\n", __func__);
-        return -1;
+        return 0;
     }
     if (length <= 0) {
         fprintf(stderr, "The 'length' must be greater than zero at '%s'\n", __func__);
