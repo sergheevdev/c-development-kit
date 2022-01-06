@@ -50,7 +50,7 @@ uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length) {
         return 0;
     }
     uint32_t hash = INIT_32;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         hash ^= (bytes[i] & 0xff);
         hash *= PRIME_32;
     }
@@ -76,7 +76,7 @@ uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length) {
         return 0;
     }
     uint64_t hash = INIT_64;
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         hash ^= (bytes[i] & 0xff);
         hash *= PRIME_64;
     }
