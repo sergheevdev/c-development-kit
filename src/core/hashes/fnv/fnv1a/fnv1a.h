@@ -29,7 +29,7 @@ uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length);
 /**
  * Returns a 32 bit integer hash of the given text.
  *
- * @return the hash of the given text, or {@code -1} if the bytes value is {@code NULL}
+ * @return the hash of the given text, or {@code -1} if the text value is {@code NULL}
  */
 uint32_t hashes_fnv1a_hash32_str(const char * text);
 
@@ -43,7 +43,7 @@ uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length);
 /**
  * Returns a 64 bit integer hash of the given text.
  *
- * @return the hash of the given text, or {@code -1} if the bytes value is {@code NULL}
+ * @return the hash of the given text, or {@code -1} if the text value is {@code NULL}
  */
 uint64_t hashes_fnv1a_hash64_str(const char * text);
 
