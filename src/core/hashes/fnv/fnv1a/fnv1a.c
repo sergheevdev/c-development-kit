@@ -40,24 +40,29 @@
 static const uint32_t INIT_32 = 0x811c9dc5;
 static const uint32_t PRIME_32 = 16777619;
 
-uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length) {
+uint32_t * hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length) {
     if (bytes == NULL) {
         fprintf(stderr, "Trying to hash 'NULL' bytes at '%s'\n", __func__);
-        return 0;
+        return NULL;
     }
     if (length <= 0) {
         fprintf(stderr, "The 'length' must be greater than zero at '%s'\n", __func__);
-        return 0;
+        return NULL;
     }
-    uint32_t hash = INIT_32;
+    uint32_t * hash = malloc(sizeof(uint32_t));
+    if (hash == NULL) {
+        fprintf(stderr, "Unable to allocate memory for 'hash' at '%s'\n", __func__);
+        return NULL;
+    }
+    (* hash) = INIT_32;
     for (size_t i = 0; i < length; i++) {
-        hash ^= (bytes[i] & 0xff);
-        hash *= PRIME_32;
+        (* hash) ^= (bytes[i] & 0xff);
+        (* hash) *= PRIME_32;
     }
     return hash;
 }
 
-uint32_t hashes_fnv1a_hash32_str(const char * text) {
+uint32_t * hashes_fnv1a_hash32_str(const char * text) {
     return hashes_fnv1a_hash32_bytes(text, strlen(text));
 }
 
@@ -66,23 +71,28 @@ uint32_t hashes_fnv1a_hash32_str(const char * text) {
 static const uint64_t INIT_64 = 0xcbf29ce484222325;
 static const uint64_t PRIME_64 = 1099511628211;
 
-uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length) {
+uint64_t * hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length) {
     if (bytes == NULL) {
         fprintf(stderr, "Trying to hash 'NULL' bytes at '%s'\n", __func__);
-        return 0;
+        return NULL;
     }
     if (length <= 0) {
         fprintf(stderr, "The 'length' must be greater than zero at '%s'\n", __func__);
-        return 0;
+        return NULL;
     }
-    uint64_t hash = INIT_64;
+    uint64_t * hash = malloc(sizeof(uint64_t));
+    if (hash == NULL) {
+        fprintf(stderr, "Unable to allocate memory for 'hash' at '%s'\n", __func__);
+        return NULL;
+    }
+    (* hash) = INIT_64;
     for (size_t i = 0; i < length; i++) {
-        hash ^= (bytes[i] & 0xff);
-        hash *= PRIME_64;
+        (* hash) ^= (bytes[i] & 0xff);
+        (* hash) *= PRIME_64;
     }
     return hash;
 }
 
-uint64_t hashes_fnv1a_hash64_str(const char * text) {
+uint64_t * hashes_fnv1a_hash64_str(const char * text) {
     return hashes_fnv1a_hash64_bytes(text, strlen(text));
 }

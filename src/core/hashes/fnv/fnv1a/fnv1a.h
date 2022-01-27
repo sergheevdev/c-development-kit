@@ -22,29 +22,49 @@
 /**
  * Returns a 32 bit integer hash of the given bytes.
  *
- * @return the hash value, or {@code 0} if the bytes value is {@code NULL} or the length is <= 0
+ * It might return {@code NULL} if:
+ * - The "bytes" pointer is null.
+ * - The "length" is less or equal to zero.
+ * - Could not allocate memory for the return value.
+ *
+ * @return the hash value, or {@code NULL} if an error occurred
  */
-uint32_t hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length);
+uint32_t * hashes_fnv1a_hash32_bytes(const char * bytes, const size_t length);
 
 /**
  * Returns a 32 bit integer hash of the given text.
  *
- * @return the hash value, or {@code 0} if the text value is {@code NULL}
+ * It might return {@code NULL} if:
+ * - The "text" pointer is null.
+ * - The "text" length is less or equal to zero.
+ * - Could not allocate memory for the return value.
+ *
+ * @return the hash value, or {@code NULL} if an error occurred
  */
-uint32_t hashes_fnv1a_hash32_str(const char * text);
+uint32_t * hashes_fnv1a_hash32_str(const char * text);
 
 /**
  * Returns a 64 bit integer hash of the given bytes.
  *
- * @return the hash value, or {@code 0} if the bytes value is {@code NULL} or the length is <= 0
+ * It might return {@code NULL} if:
+ * - The "bytes" pointer is null.
+ * - The "length" is less or equal to zero.
+ * - Could not allocate memory for the return value.
+ *
+ * @return the hash value, or {@code NULL} if an error occurred
  */
-uint64_t hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length);
+uint64_t * hashes_fnv1a_hash64_bytes(const char * bytes, const size_t length);
 
 /**
  * Returns a 64 bit integer hash of the given text.
  *
- * @return the hash value, or {@code 0} if the text value is {@code NULL}
+ * It might return {@code NULL} if:
+ * - The "text" pointer is null.
+ * - The "text" length is less or equal to zero.
+ * - Could not allocate memory for the return value.
+ *
+ * @return the hash value, or {@code NULL} if an error occurred
  */
-uint64_t hashes_fnv1a_hash64_str(const char * text);
+uint64_t * hashes_fnv1a_hash64_str(const char * text);
 
 #endif /* HASHES_FNV1A_H */

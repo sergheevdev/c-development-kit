@@ -27,25 +27,48 @@ void assert(int condition, char message[]) {
 
 void hashes_fnv1a_hash32_str_test() {
     printf("*** Running test '%s'\n", __func__);
-    // Testing 32-bit hashes match expected
-    assert(hashes_fnv1a_hash32_str("Hello there!") == 2037575912, "Hash (32-bit) 1 does not match expected!");
-    assert(hashes_fnv1a_hash32_str("Hello where?") == 1369641681, "Hash (32-bit) 2 does not match expected!");
-    assert(hashes_fnv1a_hash32_str("AAAAA") == 3552656040, "Hash (32-bit) 3 does not match expected!");
-    assert(hashes_fnv1a_hash32_str("AAAAA ") == 3777963032, "Hash (32-bit) 4 does not match expected!");
-    assert(hashes_fnv1a_hash32_str("Yo, Whats up!") == 1109325136, "Hash (32-bit) 5 does not match expected!");
+    // Testing hashes values match expected
+    uint32_t * first = hashes_fnv1a_hash32_str("Hello there!");
+    assert((* first) == 2037575912, "First hash result does not match expected!");
+    free(first);
+    uint32_t * second = hashes_fnv1a_hash32_str("AAAAA");
+    assert((* second) == 3552656040, "Second hash result does not match expected!");
+    free(second);
+    uint32_t * third = hashes_fnv1a_hash32_str("AAAAA ");
+    assert((* third) == 3777963032, "Third hash result does not match expected!");
+    free(third);
+    // Testing hashes pointers return 'NULL' if parameters validation fails
+    uint32_t * fourth = hashes_fnv1a_hash32_bytes(NULL, 10);
+    assert(fourth == NULL, "Fourth hash result must be NULL!");
+    free(fourth);
+    uint32_t * fifth = hashes_fnv1a_hash32_bytes("sample text", 0);
+    assert(fifth == NULL, "Fourth hash result must be NULL!");
+    free(fifth);
 }
 
 void hashes_fnv1a_hash64_str_test() {
     printf("*** Running test '%s'\n", __func__);
-    // Testing 64-bit hashes match expected
-    assert(hashes_fnv1a_hash64_str("Welcome home!") == 6875887167340965921, "Hash (64-bit) 1 does not match expected!");
-    assert(hashes_fnv1a_hash64_str("Minecraft") == 2767293019749932152, "Hash (64-bit) 2 does not match expected!");
-    assert(hashes_fnv1a_hash64_str("Yo, it's a plane!") == 5942718437609282930, "Hash (64-bit) 3 does not match expected!");
-    assert(hashes_fnv1a_hash64_str("Pen Pineapple Apple Pen!") == 3085370648541523016, "Hash (64-bit) 4 does not match expected!");
-    assert(hashes_fnv1a_hash64_str("RFC-2616 for HTTP!") == 3530592443485884302, "Hash (64-bit) 5 does not match expected!");
+    // Testing hashes values match expected
+    uint64_t * first = hashes_fnv1a_hash64_str("Welcome home!");
+    assert((* first) == 6875887167340965921, "First hash result does not match expected!");
+    free(first);
+    uint64_t * second = hashes_fnv1a_hash64_str("RFC-2616 for HTTP!");
+    assert((* second) == 3530592443485884302, "Second hash result does not match expected!");
+    free(second);
+    uint64_t * third = hashes_fnv1a_hash64_str("Pen Pineapple Apple Pen!");
+    assert((* third) == 3085370648541523016, "Third hash result does not match expected!");
+    free(third);
+    // Testing hashes pointers return 'NULL' if parameters validation fails
+    uint64_t * fourth = hashes_fnv1a_hash64_bytes(NULL, 10);
+    assert(fourth == NULL, "Fourth hash result must be NULL!");
+    free(fourth);
+    uint64_t * fifth = hashes_fnv1a_hash64_bytes("sample text", 0);
+    assert(fifth == NULL, "Fourth hash result must be NULL!");
+    free(fifth);
 }
 
 int main() {
+    fclose(stderr); // Prevent printing "expected" errors
     hashes_fnv1a_hash32_str_test();
     hashes_fnv1a_hash64_str_test();
 }
