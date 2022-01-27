@@ -42,8 +42,11 @@ void hashes_fnv1a_hash32_str_test() {
     assert(fourth == NULL, "Fourth hash result must be NULL!");
     free(fourth);
     uint32_t * fifth = hashes_fnv1a_hash32_bytes("sample text", 0);
-    assert(fifth == NULL, "Fourth hash result must be NULL!");
+    assert(fifth == NULL, "Fifth hash result must be NULL!");
     free(fifth);
+    uint32_t * sixth = hashes_fnv1a_hash32_bytes(NULL, 0);
+    assert(sixth == NULL, "Sixth hash result must be NULL!");
+    free(sixth);
 }
 
 void hashes_fnv1a_hash64_str_test() {
@@ -63,8 +66,11 @@ void hashes_fnv1a_hash64_str_test() {
     assert(fourth == NULL, "Fourth hash result must be NULL!");
     free(fourth);
     uint64_t * fifth = hashes_fnv1a_hash64_bytes("sample text", 0);
-    assert(fifth == NULL, "Fourth hash result must be NULL!");
+    assert(fifth == NULL, "Fifth hash result must be NULL!");
     free(fifth);
+    uint64_t * sixth = hashes_fnv1a_hash64_bytes(NULL, 0);
+    assert(sixth == NULL, "Sixth hash result must be NULL!");
+    free(sixth);
 }
 
 int main() {
